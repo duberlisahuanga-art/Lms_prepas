@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutor IA | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/estudiante.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<style>
+    .tutor-layout { display: flex; gap: 16px; align-items: flex-start; }
+    .tutor-side { width: 260px; flex-shrink: 0; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 140px); position: sticky; top: 90px; }
+    .side-title { color: var(--muted); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; padding: 4px 6px; }
+    .conv-list { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+    .conv-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(0,240,255,0.05); border: 1px solid transparent; border-radius: 12px; cursor: pointer; transition: all 0.2s; color: var(--ink); }
+    .conv-item:hover { background: rgba(0,240,255,0.12); }
+    .conv-item.on { border-color: rgba(0,240,255,0.5); background: rgba(0,240,255,0.14); }
+    .conv-item .ct { flex: 1; font-size: 0.82rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-item .cx { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; padding: 4px; border-radius: 6px; }
+    .conv-item .cx:hover { color: var(--red); background: var(--red-soft); }
+    .side-empty { color: var(--muted); font-size: 0.8rem; font-weight: 700; text-align: center; padding: 14px 6px; }
+    .btn-historial { display: none; }
+    .web-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--cyan); background: rgba(0,240,255,0.1); padding: 3px 10px; border-radius: 10px; margin-top: 8px; font-weight: 700; }
+    /* Saludo general con ejemplos clicables */
+    .msg.saludo .md p { margin: 0 0 10px; }
+    .msg.saludo .md ul { margin: 0 0 12px; padding-left: 20px; }
+    .msg.saludo .md li { margin-bottom: 4px; }
+    .ejemplos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(168, 85, 247, 0.15); }
+    .ejemplos button {
+        background: rgba(34, 217, 255, 0.08);
+        border: 1px solid rgba(34, 217, 255, 0.4);
+        color: var(--cy);
+        padding: 8px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-weight: 700;
+        transition: all 0.2s;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        min-height: 34px;
+    }
+    .ejemplos button:hover {
+        background: linear-gradient(135deg, #22d9ff 0%, #a855f7 100%);
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 0 22px rgba(34, 217, 255, 0.45);
+        transform: translateY(-2px);
+    }
+    .ejemplos button i { font-size: 0.95rem; filter: drop-shadow(0 0 6px rgba(34, 217, 255, 0.5)); }
+    @media (max-width: 900px) {
+        .tutor-layout { flex-direction: column; }
+        .tutor-side { display: none; width: 100%; position: static; max-height: 300px; }
+        .tutor-side.open { display: flex; }
+        .btn-historial { display: inline-flex; }
+    }
+</style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <div class="nav-links" id="navLinks">
+        <a href="dashboard_estudiante.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="universidades_estudiante.html"><i class="fas fa-university"></i> Universidades</a>
+        <a href="biblioteca_estudiante.html"><i class="fas fa-book"></i> Biblioteca</a>
+        <a href="cursos_estudiante.html"><i class="fas fa-book-open"></i> Mis Cursos</a>
+        <a href="arcade_estudiante.html"><i class="fas fa-gamepad"></i> Arcade</a>
+        <a href="chat_ia.html" class="tutor on"><i class="fas fa-robot"></i> Tutor IA</a>
+        <a href="perfil_estudiante.html"><i class="fas fa-user"></i> Mi Cuenta</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user"><div class="nav-avatar" id="navAvatar">E</div><span class="nav-name" id="navNombre">Estudiante</span></div>
+        <button class="nav-out" id="out" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+        <button class="nav-burger" onclick="document.getElementById('navLinks').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+    </div>
+</nav>
+<main class="main">
+    <div class="tutor-layout">
+        <aside class="tutor-side" id="tutorSide">
+            <button class="btn sm" style="justify-content:center;" onclick="nuevoChat()"><i class="fas fa-pen"></i> Nuevo chat</button>
+            <button class="btn sm ghost btn-historial" style="justify-content:center;" onclick="document.getElementById('tutorSide').classList.toggle('open')"><i class="fas fa-clock-rotate-left"></i> Ver historial</button>
+            <div class="side-title">Recientes</div>
+            <div class="conv-list" id="listaConvs"><div class="side-empty">Aún no tienes conversaciones.</div></div>
+        </aside>
+        <section style="flex:1;min-width:0;">
+            <section class="hero" style="padding:22px 26px;margin-bottom:14px;">
+                <h1 style="font-size:1.35rem;">Tutor IA 🤖</h1>
+                <p>Respuestas con fórmulas reales, búsqueda en internet y exportación a PDF / Word / Excel.</p>
+            </section>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;max-width:560px;margin-bottom:12px;">
+                <div class="f" style="flex:1;min-width:200px;margin-bottom:0;">
+                    <label>Curso sobre el que preguntas</label>
+                    <select id="selCurso" onchange="actualizarHead()"><option value="">General (sin curso)</option></select>
+                </div>
+                <button class="chip on-web" id="webToggle" style="align-self:flex-end;margin-bottom:0;height:42px;"><i class="fas fa-globe"></i> Internet: ON</button>
+            </div>
+            <div class="chat-wrap">
+                <div class="chat-head"><i class="fas fa-robot"></i> Tutor IA <span id="headCurso" style="opacity:.85;font-weight:700;font-size:.8rem;"></span></div>
+                <div class="chat-body" id="chatBody"></div>
+                <div class="chips">
+                    <button class="chip" onclick="prefijar('Tengo una duda: ')">Tengo una duda</button>
+                    <button class="chip" onclick="prefijar('Explícame este tema: ')">Explícame un tema</button>
+                    <button class="chip" onclick="prefijar('Hazme un resumen de: ')">Resumen</button>
+                    <button class="chip" onclick="prefijar('Dame las fórmulas clave de: ')">Fórmulas</button>
+                    <button class="chip" onclick="prefijar('Genera un cuadro comparativo de: ')">Cuadro</button>
+                    <button class="chip" onclick="prefijar('Bótame libros de: ')">Libros completos</button>
+                </div>
+                <div class="chat-input">
+                    <input id="chatInput" placeholder="Ej.: dame las fórmulas de MRUV, genera un cuadro, código de ejemplo...">
+                    <button class="btn" id="btnSend" onclick="enviar()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer class="footer">Devioz Academy © 2025</footer>
+</main>
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let cursos = [];
+let convActual = null;
+let convsData = [];
+let webOn = true;
+let respuestasRaw = [];
+let ocupado = false;
+window.historialLocal = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    cargarSesion();
+    document.getElementById('out').onclick = function() {
+        if (confirm('¿Cerrar sesión?')) { localStorage.clear(); sessionStorage.clear(); window.location.href = 'index.html'; }
+    };
+    document.getElementById('chatInput').addEventListener('keypress', e => { if (e.key === 'Enter') enviar(); });
+    document.getElementById('webToggle').onclick = function(){
+        webOn = !webOn;
+        this.classList.toggle('on-web', webOn);
+        this.innerHTML = '<i class="fas fa-globe"></i> Internet: ' + (webOn ? 'ON' : 'OFF');
+    };
+    await cargarCursos();
+    await cargarConversaciones();
+    saludoInicial();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('curso')) { document.getElementById('selCurso').value = params.get('curso'); actualizarHead(); }
+    if (params.get('q')) { document.getElementById('chatInput').value = params.get('q'); enviar(); }
+});
+
+async function cargarSesion() {
+    try {
+        const res = await fetch(BASE + 'UsuarioController.php?accion=mi_perfil');
+        const d = await res.json();
+        if (d.ok && d.data) {
+            localStorage.setItem('usuario', JSON.stringify(d.data));
+            document.getElementById('navNombre').textContent = d.data.nombre;
+            document.getElementById('navAvatar').innerHTML = d.data.foto ? '<img src="' + d.data.foto + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : d.data.nombre.charAt(0).toUpperCase();
+            if (d.data.rol && d.data.rol !== 'estudiante') window.location.href = 'dashboard_admin.html';
+        }
+    } catch (e) { console.error(e); }
+}
+async function cargarCursos() {
+    try {
+        const res = await fetch(BASE + 'CursoController.php?accion=listar');
+        const data = await res.json();
+        cursos = data.data || [];
+        const sel = document.getElementById('selCurso');
+        cursos.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.nombre; sel.appendChild(o); });
+    } catch (e) { console.error(e); }
+}
+function actualizarHead() {
+    const sel = document.getElementById('selCurso');
+    const c = cursos.find(x => x.id == sel.value);
+    document.getElementById('headCurso').textContent = c ? '· ' + c.nombre : '';
+}
+
+/* ========== RENDERIZADO MARKDOWN + LATEX ========== */
+function renderMD(txt){
+    const blocks = [];
+    txt = txt.replace(/\$\$([\s\S]+?)\$\$/g, m => { blocks.push(m); return '@@MATH' + (blocks.length - 1) + '@@'; });
+    txt = txt.replace(/\$([^\n$]+?)\$/g, m => { blocks.push(m); return '@@MATH' + (blocks.length - 1) + '@@'; });
+    let html = marked.parse(txt);
+    html = html.replace(/@@MATH(\d+)@@/g, (m, i) => blocks[+i]);
+    html = DOMPurify.sanitize(html);
+    return html;
+}
+function matematicas(el){
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$',  right: '$',  display: false },
+                { left: '\\[', right: '\\]', display: true },
+                { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+        });
+    }
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ========== 🔍 BÚSQUEDA WEB CON GOOGLE ========== */
+async function contextoWeb(q){
+    try {
+        const fd = new FormData();
+        fd.append('accion', 'buscar_web');
+        fd.append('query', q);
+        fd.append('num', '3');
+        const r = await fetch(BASE + 'IAController.php', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (!d.ok || !d.data || !d.data.length) return '';
+        return d.data.map(s => '- ' + s.title + ': ' + s.snippet + ' (fuente: ' + s.link + ')').join('\n');
+    } catch (e) { 
+        console.error('Error búsqueda web:', e);
+        return ''; 
+    }
+}
+
+/* ========== MENSAJES ========== */
+function saludoInicial() {
+    const u = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const nombre = u.nombre ? u.nombre.split(' ')[0] : '';
+
+    document.getElementById('chatBody').innerHTML = '';
+    respuestasRaw = [];
+    window.historialLocal = [];
+
+    const div = document.createElement('div');
+    div.className = 'msg ia saludo';
+    div.innerHTML = `
+        <div class="md">
+            <p>¡Hola${nombre ? ', <strong>' + escapeHtml(nombre) + '</strong>' : ''}! 👋 Soy tu <strong>Tutor Devioz</strong>, tu compañero de estudio para <strong>cualquier curso</strong>.</p>
+            <p>Puedo ayudarte con:</p>
+            <ul>
+                <li>📚 <strong>Explicaciones</strong> paso a paso de cualquier tema</li>
+                <li>🧮 <strong>Fórmulas y ejercicios</strong> resueltos (mate, física, química…)</li>
+                <li>📊 <strong>Resúmenes, cuadros y tablas</strong> comparativas</li>
+                <li>💻 <strong>Código</strong> y ejemplos prácticos</li>
+                <li>🌐 <strong>Información actualizada</strong> de internet</li>
+                <li>📖 <strong>Libros y PDFs</strong> completos para descargar</li>
+            </ul>
+            <p>Escribe tu pregunta abajo, o toca un ejemplo para probarme 👇</p>
+        </div>
+        <div class="ejemplos">
+            <button onclick="prefijarYEnviar('Explícame qué es la célula y sus partes')">🔬 Biología</button>
+            <button onclick="prefijarYEnviar('Resuelve esta ecuación: 2x + 6 = 14')">🧮 Matemática</button>
+            <button onclick="prefijarYEnviar('Hazme un resumen de la Independencia del Perú')">📜 Historia</button>
+            <button onclick="prefijarYEnviar('Dame las fórmulas clave del MRUV')">📐 Física</button>
+            <button onclick="prefijarYEnviar('Dame un ejemplo de código en Python')">💻 Código</button>
+            <button onclick="prefijarYEnviar('¿Cuál es el tipo de cambio del dólar hoy?')">🌐 Actualidad</button>
+        </div>`;
+    document.getElementById('chatBody').appendChild(div);
+    document.getElementById('chatBody').scrollTop = 99999;
+}
+
+function addMsg(texto, tipo, usoWeb = false) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + tipo;
+    if (tipo === 'ia') {
+        const idx = respuestasRaw.push(texto) - 1;
+        div.innerHTML = '<div class="md">' + renderMD(texto) + '</div>' +
+            (usoWeb ? '<span class="web-badge"><i class="fas fa-globe"></i> con internet</span>' : '') +
+            '<div class="msg-tools">' +
+                '<button onclick="copiarResp(' + idx + ')"><i class="fas fa-copy"></i> Copiar</button>' +
+                '<button onclick="imprimirResp(' + idx + ')"><i class="fas fa-file-pdf"></i> PDF</button>' +
+                '<button onclick="exportWord(' + idx + ')"><i class="fas fa-file-word"></i> Word</button>' +
+                '<button onclick="exportExcel(' + idx + ')"><i class="fas fa-file-excel"></i> Excel</button>' +
+            '</div>';
+        document.getElementById('chatBody').appendChild(div);
+        matematicas(div);
+    } else {
+        div.textContent = texto;
+        document.getElementById('chatBody').appendChild(div);
+    }
+    document.getElementById('chatBody').scrollTop = 99999;
+    return div;
+}
+
+function prefijar(txt) { const i = document.getElementById('chatInput'); i.value = txt; i.focus(); }
+
+function prefijarYEnviar(txt) {
+    document.getElementById('chatInput').value = txt;
+    enviar();
+}
+
+/* ========== EXPORTACIÓN ========== */
+function descargar(blob, nombre){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function copiarResp(i){
+    navigator.clipboard.writeText(respuestasRaw[i]).then(()=>alert('📋 Copiado'));
+}
+function imprimirResp(i){
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.write('<!DOCTYPE html><html><head><title>Devioz | Respuesta</title>' +
+        '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">' +
+        '<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\/script>' +
+        '<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"><\/script>' +
+        '<style>body{font-family:Segoe UI,Arial,sans-serif;margin:40px;color:#111;line-height:1.6}' +
+        'table{border-collapse:collapse}td,th{border:1px solid #999;padding:6px 10px}' +
+        'pre{background:#f4f4f4;padding:10px;border-radius:8px}' +
+        'h1,h2,h3{color:#4338ca}</style></head><body>' +
+        '<h2>🧠 Tutor Devioz Academy</h2><div id="c">' + renderMD(respuestasRaw[i]) + '</div>' +
+        '<script>onload=function(){renderMathInElement(document.getElementById("c"),{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}]});setTimeout(function(){window.print()},400)}<\/script>' +
+        '</body></html>');
+    w.document.close();
+}
+function exportWord(i){
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">' +
+        '<head><meta charset="utf-8"><title>Devioz Tutor</title></head><body>' +
+        '<h1>Tutor Devioz Academy</h1>' + renderMD(respuestasRaw[i]) + '</body></html>';
+    descargar(new Blob(['\ufeff', html], {type:'application/msword'}), 'tutor-devioz.doc');
+}
+function exportExcel(i){
+    const lineas = respuestasRaw[i].split('\n');
+    let filas = '';
+    lineas.forEach(l=>{
+        l = l.trim();
+        if(!l) return;
+        if(l.includes('|')){
+            const celdas = l.split('|').map(c=>c.trim()).filter(c=>c!=='');
+            if(celdas.length && celdas.every(c=>/^:?-+:?$/.test(c))) return;
+            if(celdas.length) filas += '<tr>' + celdas.map(c=>'<td>'+escapeHtml(c)+'</td>').join('') + '</tr>';
+        } else {
+            filas += '<tr><td>'+escapeHtml(l)+'</td></tr>';
+        }
+    });
+    const html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head>' +
+        '<body><table border="1">'+filas+'</table></body></html>';
+    descargar(new Blob(['\ufeff'+html], {type:'application/vnd.ms-excel'}), 'tutor-devioz.xls');
+}
+
+/* ========== ENVÍO ========== */
+async function enviar() {
+    const input = document.getElementById('chatInput');
+    const texto = input.value.trim();
+    if (!texto || ocupado) return;
+    ocupado = true;
+    addMsg(texto, 'user');
+    input.value = '';
+    const btn = document.getElementById('btnSend');
+    btn.disabled = true;
+    const typing = addMsg('<i class="fas fa-spinner fa-spin"></i> Pensando...', 'ia');
+
+    const sel = document.getElementById('selCurso');
+    const curso = cursos.find(x => x.id == sel.value);
+    const nombreCurso = curso ? curso.nombre : '';
+    const esLibros = /\b(libro|libros|pdf|pdfs|bibliografia|bibliografía|material|guia|guía|apuntes|manual|manuales|b[oó]tame|v[oó]tame)\b/i.test(texto);
+
+    let respuesta = '';
+    let usoWeb = false;
+    try {
+        let ctxWeb = '';
+        if (webOn) { 
+            ctxWeb = await contextoWeb(texto); 
+            if (ctxWeb) usoWeb = true; 
+        }
+
+        const fd = new FormData();
+        fd.append('accion', 'chatLibre');
+        fd.append('mensaje', texto);
+        fd.append('curso', nombreCurso);
+        fd.append('web', webOn ? '1' : '0');
+        fd.append('contexto_web', ctxWeb);
+        fd.append('historial', JSON.stringify(window.historialLocal.slice(-6)));
+        fd.append('modulo', 'cursos');
+
+        let data = null;
+        if (esLibros) {
+            try {
+                const fdL = new FormData();
+                fdL.append('accion', 'buscar');
+                fdL.append('q', (nombreCurso ? nombreCurso + ': ' : '') + texto);
+                const rL = await fetch(BASE + 'LibrosController.php', { method: 'POST', body: fdL });
+                const dL = await rL.json();
+                if (dL.ok && dL.data && dL.data.respuesta) data = { ok: true, respuesta: dL.data.respuesta };
+            } catch (e) {}
+        }
+        if (!data) {
+            const r = await fetch(BASE + 'IAController.php', { method: 'POST', body: fd });
+            data = await r.json();
+        }
+
+        if (data.ok && data.respuesta) respuesta = data.respuesta;
+        else throw new Error(data.msg || 'sin respuesta');
+
+        window.historialLocal.push({ rol: 'user', texto }, { rol: 'ia', texto: respuesta });
+    } catch (e) {
+        respuesta = 'No pude conectar con el tutor ahora mismo. Intenta de nuevo en unos minutos. 📚';
+    } finally {
+        typing.remove();
+        btn.disabled = false;
+        ocupado = false;
+        addMsg(respuesta, 'ia', usoWeb);
+        await cargarConversaciones();
+        if (convsData.length) convActual = convsData[0].id;
+    }
+}
+
+/* ========== HISTORIAL ========== */
+async function cargarConversaciones() {
+    try {
+        const res = await fetch(BASE + 'TutorController.php?accion=listar_conversaciones');
+        const data = await res.json();
+        convsData = data.data || [];
+        const box = document.getElementById('listaConvs');
+        if (!convsData.length) { box.innerHTML = '<div class="side-empty">Aún no tienes conversaciones.</div>'; return; }
+        box.innerHTML = convsData.map(c => `
+            <div class="conv-item ${convActual == c.id ? 'on' : ''}" onclick="abrirConversacion(${c.id})">
+                <i class="fas fa-comments" style="color:var(--cyan);font-size:0.85rem;"></i>
+                <span class="ct">${escapeHtml(c.titulo)}</span>
+                <button class="cx" title="Eliminar" onclick="event.stopPropagation(); eliminarConv(${c.id})"><i class="fas fa-trash"></i></button>
+            </div>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function abrirConversacion(id) {
+    try {
+        const res = await fetch(BASE + 'TutorController.php?accion=obtener_mensajes&id=' + id);
+        const data = await res.json();
+        if (!data.ok) { alert(data.msg); return; }
+        convActual = id;
+        document.getElementById('chatBody').innerHTML = '';
+        respuestasRaw = [];
+        window.historialLocal = [];
+        addMsg('<strong style="color:var(--cyan);">Repasando:</strong> ' + escapeHtml(data.data.titulo), 'ia');
+        data.data.mensajes.forEach(m => {
+            addMsg(m.mensaje, m.rol === 'user' ? 'user' : 'ia');
+            window.historialLocal.push({ rol: m.rol, texto: m.mensaje });
+        });
+        cargarConversaciones();
+        if (window.innerWidth <= 900) document.getElementById('tutorSide').classList.remove('open');
+    } catch (e) { alert('Error al abrir la conversación.'); }
+}
+
+function nuevoChat() {
+    convActual = null;
+    saludoInicial();
+    cargarConversaciones();
+    if (window.innerWidth <= 900) document.getElementById('tutorSide').classList.remove('open');
+}
+
+async function eliminarConv(id) {
+    if (!confirm('¿Eliminar esta conversación del historial?')) return;
+    try {
+        const fd = new FormData();
+        fd.append('accion', 'eliminar_conversacion');
+        fd.append('id', id);
+        const res = await fetch(BASE + 'TutorController.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) { if (convActual == id) nuevoChat(); cargarConversaciones(); }
+        else alert(data.msg);
+    } catch (e) { alert('Error al eliminar.'); }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estudiantes | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <a href="dashboard_admin.html"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="estudiantes_admin.html" class="on"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="cursos_admin.html"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="monitoreo_admin.html"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html"><i class="fas fa-user-shield"></i><span>Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Gestión de <span>Estudiantes</span></h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge" id="cTotal">0 cuentas</span>
+            <span class="badge-status badge-active" id="cActivos">0 activos</span>
+            <span class="badge-status badge-inactive" id="cInactivos">0 inactivos</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <p style="color:var(--mu);font-size:.85rem;margin-bottom:16px">
+            <i class="fas fa-info-circle" style="color:var(--cy)"></i>
+            Los estudiantes se registran solos desde la página pública. Aquí solo gestionas el
+            <strong style="color:var(--tx)">acceso</strong>: activar o desactivar cuentas.
+            Una cuenta desactivada no puede iniciar sesión; el estudiante puede reactivarla registrándose de nuevo con su mismo correo.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+            <div class="search-box" style="flex:1;min-width:220px;margin-bottom:0">
+                <input type="text" id="q" placeholder="Buscar por nombre o correo…">
+            </div>
+            <div class="filter-tabs" style="margin-bottom:0">
+                <button class="filter-tab active" data-f="todos">Todos</button>
+                <button class="filter-tab" data-f="estudiante">Estudiantes</button>
+                <button class="filter-tab" data-f="admin">Admins</button>
+                <button class="filter-tab" data-f="inactivo">Inactivos</button>
+            </div>
+        </div>
+        <div id="box"><p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando usuarios…</p></div>
+    </div>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let usuarios = [], filtro = 'todos', busca = '';
+const esc = s => (s || '').replace(/'/g, "\\'");
+
+document.addEventListener('DOMContentLoaded', function(){
+    var logoutBtn = document.getElementById('out');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                localStorage.clear(); sessionStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
+    }
+    var mb = document.querySelector('.mb');
+    if (mb) mb.addEventListener('click', function(){ document.querySelector('.sb').classList.toggle('open'); });
+
+    document.getElementById('q').addEventListener('input', e => { busca = e.target.value.toLowerCase(); pintar(); });
+    document.querySelectorAll('.filter-tab').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(x => x.classList.remove('active'));
+        b.classList.add('active'); filtro = b.dataset.f; pintar();
+    }));
+    cargar();
+});
+
+async function cargar(){
+    const box = document.getElementById('box');
+    box.innerHTML = '<p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando usuarios…</p>';
+    try {
+        const r = await fetch(BASE + 'UsuarioController.php?accion=listar');
+        const d = await r.json();
+        if (!d.ok) { box.innerHTML = '<p class="empty" style="color:var(--er)">' + (d.msg || 'Acceso denegado') + '</p>'; return; }
+        usuarios = d.data || [];
+        pintar();
+    } catch (e) {
+        box.innerHTML = '<p class="empty" style="color:var(--er)">Error de conexión con el servidor</p>';
+    }
+}
+
+function pintar(){
+    const box = document.getElementById('box');
+    const activos = usuarios.filter(u => (u.estado || '').toLowerCase() === 'activo').length;
+    document.getElementById('cTotal').textContent = usuarios.length + ' cuentas';
+    document.getElementById('cActivos').textContent = activos + ' activos';
+    document.getElementById('cInactivos').textContent = (usuarios.length - activos) + ' inactivos';
+
+    let lista = usuarios.filter(u => {
+        if (filtro === 'todos') return true;
+        if (filtro === 'inactivo') return (u.estado || '').toLowerCase() !== 'activo';
+        return (u.rol || '').toLowerCase() === filtro;
+    });
+    if (busca) lista = lista.filter(u => ((u.nombre || '') + ' ' + (u.correo || '')).toLowerCase().includes(busca));
+    if (!lista.length) { box.innerHTML = '<p class="empty"><i class="fas fa-users"></i>Sin resultados</p>'; return; }
+
+    box.innerHTML = '<table><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Registro</th><th>Acceso</th></tr>' +
+        lista.map(u => {
+            const ini = (u.nombre || '?').charAt(0).toUpperCase();
+            const av = u.foto ? '<img src="' + u.foto + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : ini;
+            const activo = (u.estado || '').toLowerCase() === 'activo';
+            const rolB = (u.rol || '').toLowerCase() === 'admin'
+                ? '<span class="badge" style="background:rgba(168,85,247,.15);color:#c084fc;border-color:rgba(168,85,247,.4)">ADMIN</span>'
+                : '<span class="badge">ESTUDIANTE</span>';
+            const estB = activo ? '<span class="badge-status badge-active">activo</span>' : '<span class="badge-status badge-inactive">inactivo</span>';
+            const accion = activo
+                ? '<button class="btn sm dg" onclick="cambiarEstado(' + u.id + ',\'inactivo\',\'' + esc(u.nombre) + '\')"><i class="fas fa-user-slash"></i> Desactivar</button>'
+                : '<button class="btn sm btn-view" onclick="cambiarEstado(' + u.id + ',\'activo\',\'' + esc(u.nombre) + '\')"><i class="fas fa-user-check"></i> Activar</button>';
+            return '<tr>' +
+                '<td><span style="display:flex;align-items:center;gap:10px"><span class="chat-msg-avatar">' + av + '</span><strong>' + u.nombre + '</strong></span></td>' +
+                '<td>' + (u.correo || '—') + '</td><td>' + rolB + '</td><td>' + estB + '</td>' +
+                '<td style="color:var(--mu);font-size:.8rem">' + ((u.fecha_registro || '').slice(0, 10) || '—') + '</td>' +
+                '<td>' + accion + '</td></tr>';
+        }).join('') + '</table>';
+}
+
+async function cambiarEstado(id, estado, nombre){
+    const msg = estado === 'inactivo'
+        ? '¿Desactivar la cuenta de ' + nombre + '?\nNo podrá iniciar sesión hasta que la reactives o se registre de nuevo.'
+        : '¿Reactivar la cuenta de ' + nombre + '?\nPodrá iniciar sesión de inmediato.';
+    if (!confirm(msg)) return;
+    const fd = new FormData();
+    fd.append('accion', 'cambiar_estado');
+    fd.append('id', id);
+    fd.append('estado', estado);
+    try {
+        const r = await fetch(BASE + 'UsuarioController.php', { method: 'POST', body: fd });
+        const d = await r.json();
+        alert(d.ok ? '✅ ' + (d.msg || 'Estado actualizado') : '⚠️ ' + (d.msg || 'Error al actualizar'));
+        if (d.ok) cargar();
+    } catch (e) { alert('Error de conexión con el servidor'); }
+}
+</script>
+</body>
+</html>

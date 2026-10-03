@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblioteca | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <a href="dashboard_admin.html"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="estudiantes_admin.html"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="cursos_admin.html"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html" class="on"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="monitoreo_admin.html"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html"><i class="fas fa-user-shield"></i><span>Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Biblioteca <span>Admin</span></h1>
+        <button class="btn" onclick="abrirModalCategoria()"><i class="fas fa-tags"></i> Categorías</button>
+    </div>
+
+    <div class="card">
+        <h3><i class="fas fa-book"></i> Cursos por categoría</h3>
+        <p style="color:var(--mu);font-size:.85rem;margin-bottom:16px;">
+            Gestiona las <strong style="color:var(--cy);">categorías</strong> con el botón de arriba.
+            Haz clic en <i class="fas fa-pen" style="color:var(--cy);"></i> para editar nombre, descripción, clasificación o reemplazar el PDF de un curso.
+        </p>
+        <div id="listaLibros"><p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando biblioteca...</p></div>
+    </div>
+</main>
+</div>
+
+<!-- MODAL: EDITAR CURSO / LIBRO -->
+<div class="modal" id="modalEditar">
+    <div class="mbox" style="max-width:640px;">
+        <button class="modal-close" onclick="cerrarModal('modalEditar')"><i class="fas fa-times"></i></button>
+        <h3><i class="fas fa-pen"></i> Editar curso / libro</h3>
+        <form id="formEditar">
+            <input type="hidden" id="editId">
+            <div class="f">
+                <label><i class="fas fa-heading"></i> Nombre *</label>
+                <input type="text" id="editNombre" required>
+            </div>
+            <div class="f">
+                <label><i class="fas fa-align-left"></i> Descripción</label>
+                <textarea id="editDesc" rows="3"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="f"><label><i class="fas fa-university"></i> Universidad</label><select id="editUni"></select></div>
+                <div class="f"><label><i class="fas fa-tags"></i> Categoría</label><select id="editCat"></select></div>
+                <div class="f"><label><i class="fas fa-layer-group"></i> Nivel</label><select id="editNiv"></select></div>
+                <div class="f"><label><i class="fas fa-calendar-alt"></i> Ciclo</label><select id="editCic"></select></div>
+            </div>
+            <div class="f">
+                <label><i class="fas fa-file-pdf"></i> Reemplazar PDF (opcional)</label>
+                <div class="file-drop" id="editFileDrop">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <div class="file-text">Arrastra un PDF o haz clic (deja vacío para conservar el actual)</div>
+                    <div class="file-name" id="editFileName"></div>
+                    <input type="file" id="editArchivo" accept="application/pdf">
+                    <button type="button" class="file-remove" onclick="removerEditArchivo(event)"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn" id="btnEditGuardar"><i class="fas fa-save"></i> Guardar cambios</button>
+                <button type="button" class="btn gh" onclick="cerrarModal('modalEditar')"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: GESTIONAR CATEGORÍAS -->
+<div class="modal" id="modalCategorias">
+    <div class="mbox" style="max-width:640px;">
+        <button class="modal-close" onclick="cerrarModal('modalCategorias')"><i class="fas fa-times"></i></button>
+        <h3><i class="fas fa-tags"></i> Gestionar Categorías</h3>
+        <form id="formCategoria" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <input type="hidden" id="catId">
+            <div class="f" style="flex:2;min-width:180px;margin:0;">
+                <label style="margin-bottom:4px;">Nombre *</label>
+                <input type="text" id="catNombre" placeholder="Ej: Matemática" required>
+            </div>
+            <div class="f" style="flex:3;min-width:220px;margin:0;">
+                <label style="margin-bottom:4px;">Descripción</label>
+                <input type="text" id="catDesc" placeholder="Opcional">
+            </div>
+            <div style="align-self:flex-end;">
+                <button type="submit" class="btn" id="btnCatGuardar"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </form>
+        <div style="border-top:1px solid var(--line);padding-top:16px;">
+            <h4 style="color:var(--cy);font-size:.9rem;margin-bottom:12px;">Categorías existentes</h4>
+            <div id="listaCategorias"><p class="empty" style="padding:20px;"><i class="fas fa-spinner fa-spin"></i></p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let cursosData = [];
+let catalogos = { uni: [], cat: [], niv: [], cic: [] };
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarBiblioteca();
+    cargarCatalogos();
+
+    document.getElementById('out').onclick = function(e) {
+        e.preventDefault();
+        if (confirm('¿Cerrar sesión?')) {
+            localStorage.clear(); sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+    };
+    document.getElementById('formCategoria').onsubmit = e => { e.preventDefault(); guardarCategoria(); };
+    document.getElementById('formEditar').onsubmit = e => { e.preventDefault(); guardarEdicion(); };
+
+    const editDrop = document.getElementById('editFileDrop');
+    const editInput = document.getElementById('editArchivo');
+    editDrop.onclick = () => editInput.click();
+    editInput.onchange = e => mostrarEditArchivo(e.target.files[0]);
+    editDrop.ondragover = e => { e.preventDefault(); editDrop.classList.add('drag'); };
+    editDrop.ondragleave = () => editDrop.classList.remove('drag');
+    editDrop.ondrop = e => {
+        e.preventDefault(); editDrop.classList.remove('drag');
+        if (e.dataTransfer.files[0]) { editInput.files = e.dataTransfer.files; mostrarEditArchivo(e.dataTransfer.files[0]); }
+    };
+
+    const mb = document.querySelector('.mb');
+    if (mb) mb.onclick = () => document.querySelector('.sb').classList.toggle('open');
+});
+
+/* ========== CARGA DE BIBLIOTECA ========== */
+async function cargarBiblioteca() {
+    const box = document.getElementById('listaLibros');
+    try {
+        const res = await fetch(BASE + 'CursoController.php?accion=listar');
+        const data = await res.json();
+        cursosData = (data.ok ? data.data : []) || [];
+
+        if (!cursosData.length) {
+            box.innerHTML = '<p class="empty"><i class="fas fa-book"></i> Aún no hay cursos. Se crean desde el módulo <a href="cursos_admin.html">Cursos</a>.</p>';
+            return;
+        }
+
+        const porCategoria = {};
+        cursosData.forEach(c => {
+            const catNombre = c.categoria_nombre || 'Sin categoría';
+            const catId = c.categoria_id || 0;
+            if (!porCategoria[catId]) porCategoria[catId] = { nombre: catNombre, cursos: [] };
+            porCategoria[catId].cursos.push(c);
+        });
+
+        const ordenadas = Object.keys(porCategoria).sort((a, b) => porCategoria[a].nombre.localeCompare(porCategoria[b].nombre));
+
+        let html = '<div class="biblio-grid">';
+        ordenadas.forEach(catId => {
+            const cat = porCategoria[catId];
+            html += `
+                <div class="categoria-card">
+                    <div class="cat-head" onclick="toggleCategoria(${catId})">
+                        <i class="fas fa-chevron-right"></i>
+                        <h3>${cat.nombre}</h3>
+                        <span class="count">${cat.cursos.length}</span>
+                    </div>
+                    <div class="cat-body" id="cat-${catId}">`;
+            cat.cursos.forEach(c => {
+                const pdfBtn = c.pdf_url
+                    ? `<a href="/lms_prepa/${c.pdf_url}" target="_blank" class="btn sm btn-view" title="Ver PDF"><i class="fas fa-file-pdf"></i> Ver</a>`
+                    : `<span class="btn sm gh" style="cursor:default;opacity:.5;"><i class="fas fa-file-pdf"></i></span>`;
+                html += `
+                    <div class="curso-item">
+                        <div class="info">
+                            <h4>${c.nombre}</h4>
+                            <small>${c.universidad_nombre || '—'}${c.descripcion ? ' · ' + c.descripcion.substring(0, 40) : ''}</small>
+                        </div>
+                        <div class="actions">
+                            ${pdfBtn}
+                            <button class="btn sm gh" title="Editar" onclick="abrirEdicion(${c.id})"><i class="fas fa-pen"></i></button>
+                        </div>
+                    </div>`;
+            });
+            html += '</div></div>';
+        });
+        html += '</div>';
+        box.innerHTML = html;
+
+        if (ordenadas.length) toggleCategoria(ordenadas[0]);
+    } catch (e) {
+        box.innerHTML = '<p class="empty" style="color:var(--er);"><i class="fas fa-exclamation-triangle"></i> Error al cargar</p>';
+    }
+}
+
+function toggleCategoria(catId) {
+    const body = document.getElementById('cat-' + catId);
+    body.classList.toggle('open');
+    body.previousElementSibling.classList.toggle('open');
+}
+
+/* ========== CATÁLOGOS PARA EL MODAL DE EDICIÓN ========== */
+async function cargarCatalogos() {
+    try {
+        const [u, cat, niv, cic] = await Promise.all([
+            fetch(BASE + 'UniversidadController.php?accion=listar').then(r => r.json()),
+            fetch(BASE + 'AcademicoController.php?accion=listar&tipo=categoria').then(r => r.json()),
+            fetch(BASE + 'AcademicoController.php?accion=listar&tipo=nivel').then(r => r.json()),
+            fetch(BASE + 'AcademicoController.php?accion=listar&tipo=ciclo').then(r => r.json())
+        ]);
+        catalogos.uni = (u.ok ? u.data : []) || [];
+        catalogos.cat = (cat.ok ? cat.data : []) || [];
+        catalogos.niv = (niv.ok ? niv.data : []) || [];
+        catalogos.cic = (cic.ok ? cic.data : []) || [];
+    } catch (e) { console.error(e); }
+}
+
+function llenarSelectEdit(id, items, valorActual) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">Sin asignar</option>';
+    items.forEach(i => {
+        sel.innerHTML += `<option value="${i.id}" ${i.id == valorActual ? 'selected' : ''}>${i.nombre}</option>`;
+    });
+}
+
+/* ========== EDICIÓN ========== */
+function abrirEdicion(id) {
+    const c = cursosData.find(x => x.id == id);
+    if (!c) { alert('Curso no encontrado'); return; }
+
+    document.getElementById('editId').value = c.id;
+    document.getElementById('editNombre').value = c.nombre || '';
+    document.getElementById('editDesc').value = c.descripcion || '';
+    llenarSelectEdit('editUni', catalogos.uni, c.universidad_id);
+    llenarSelectEdit('editCat', catalogos.cat, c.categoria_id);
+    llenarSelectEdit('editNiv', catalogos.niv, c.nivel_id);
+    llenarSelectEdit('editCic', catalogos.cic, c.ciclo_id);
+
+    document.getElementById('editArchivo').value = '';
+    document.getElementById('editFileName').textContent = c.pdf_url ? 'PDF actual: ' + c.pdf_url.split('/').pop() : '';
+    document.getElementById('editFileDrop').classList.toggle('has-file', !!c.pdf_url);
+
+    document.getElementById('modalEditar').classList.add('open');
+    setTimeout(() => document.getElementById('editNombre').focus(), 200);
+}
+
+function mostrarEditArchivo(file) {
+    if (!file) return;
+    if (file.type !== 'application/pdf') { alert('Solo se permiten PDF'); return; }
+    document.getElementById('editFileName').textContent = 'Nuevo: ' + file.name;
+    document.getElementById('editFileDrop').classList.add('has-file');
+}
+function removerEditArchivo(e) {
+    e.stopPropagation();
+    document.getElementById('editArchivo').value = '';
+    document.getElementById('editFileName').textContent = '';
+    document.getElementById('editFileDrop').classList.remove('has-file');
+}
+
+async function guardarEdicion() {
+    const id = document.getElementById('editId').value;
+    const btn = document.getElementById('btnEditGuardar');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+    const fd = new FormData();
+    fd.append('accion', 'actualizar');
+    fd.append('id', id);
+    fd.append('nombre', document.getElementById('editNombre').value.trim());
+    fd.append('descripcion', document.getElementById('editDesc').value.trim());
+    fd.append('universidad_id', document.getElementById('editUni').value);
+    fd.append('categoria_id', document.getElementById('editCat').value);
+    fd.append('nivel_id', document.getElementById('editNiv').value);
+    fd.append('ciclo_id', document.getElementById('editCic').value);
+
+    const archivo = document.getElementById('editArchivo').files[0];
+    if (archivo) fd.append('archivo', archivo);
+
+    try {
+        const res = await fetch(BASE + 'CursoController.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) {
+            alert('✅ ' + data.msg);
+            cerrarModal('modalEditar');
+            await cargarBiblioteca();
+        } else {
+            alert('⚠️ ' + data.msg);
+        }
+    } catch (e) {
+        alert('Error de conexión');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+}
+
+/* ========== CATEGORÍAS ========== */
+function abrirModalCategoria() {
+    document.getElementById('modalCategorias').classList.add('open');
+    cargarCategorias();
+}
+function cerrarModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+async function cargarCategorias() {
+    const box = document.getElementById('listaCategorias');
+    try {
+        const res = await fetch(BASE + 'AcademicoController.php?accion=listar&tipo=categoria');
+        const data = await res.json();
+        if (!data.ok || !data.data || !data.data.length) {
+            box.innerHTML = '<p style="color:var(--mu);text-align:center;padding:20px;">No hay categorías aún. Crea la primera arriba.</p>';
+            return;
+        }
+        box.innerHTML = '<div class="cat-list">' + data.data.map(c => `
+            <div class="cat-row">
+                <div class="cat-row-info">
+                    <strong>${c.nombre}</strong>
+                    <small>${c.descripcion || 'Sin descripción'}</small>
+                </div>
+                <div class="cat-row-actions">
+                    <button class="btn sm gh" onclick='editarCategoria(${JSON.stringify(c).replace(/'/g, "&apos;")})'><i class="fas fa-pen"></i></button>
+                    <button class="btn sm dg" onclick="eliminarCategoria(${c.id}, '${c.nombre.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`).join('') + '</div>';
+    } catch (e) {
+        box.innerHTML = '<p style="color:var(--er);text-align:center;padding:20px;">Error al cargar</p>';
+    }
+}
+
+function editarCategoria(c) {
+    document.getElementById('catId').value = c.id;
+    document.getElementById('catNombre').value = c.nombre;
+    document.getElementById('catDesc').value = c.descripcion || '';
+    document.getElementById('btnCatGuardar').innerHTML = '<i class="fas fa-save"></i> Actualizar';
+    document.getElementById('catNombre').focus();
+}
+
+async function guardarCategoria() {
+    const id = document.getElementById('catId').value;
+    const nombre = document.getElementById('catNombre').value.trim();
+    if (!nombre) return;
+
+    const fd = new FormData();
+    fd.append('tipo', 'categoria');
+    fd.append('nombre', nombre);
+    fd.append('descripcion', document.getElementById('catDesc').value.trim());
+    if (id) fd.append('id', id);
+
+    const btn = document.getElementById('btnCatGuardar');
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(BASE + 'AcademicoController.php?accion=' + (id ? 'actualizar' : 'crear'), { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) {
+            document.getElementById('formCategoria').reset();
+            document.getElementById('catId').value = '';
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+            await cargarCategorias();
+            cargarBiblioteca();
+        } else alert('⚠️ ' + data.msg);
+    } catch (e) {
+        alert('Error de conexión');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function eliminarCategoria(id, nombre) {
+    if (!confirm(`¿Eliminar la categoría "${nombre}"?\nSi hay cursos usándola, no se podrá eliminar.`)) return;
+    const fd = new FormData();
+    fd.append('tipo', 'categoria');
+    fd.append('id', id);
+    try {
+        const res = await fetch(BASE + 'AcademicoController.php?accion=eliminar', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) { await cargarCategorias(); cargarBiblioteca(); }
+        else alert('⚠️ ' + data.msg);
+    } catch (e) { alert('Error de conexión'); }
+}
+</script>
+</body>
+</html>

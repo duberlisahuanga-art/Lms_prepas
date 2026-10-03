@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoreo del Sistema | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <a href="dashboard_admin.html"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="estudiantes_admin.html"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="cursos_admin.html"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="monitoreo_admin.html" class="on"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html"><i class="fas fa-user-shield"></i><span>Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Monitoreo del Sistema</h1>
+        <span class="mono-clock" id="reloj">--:--:--</span>
+    </div>
+
+    <div class="mgrid">
+        <div class="mpanel mhead">
+            <div class="mhead-item"><span class="mlabel">ESTADO</span><span class="mval ok" id="h-estado">● OPERATIVO</span></div>
+            <div class="mhead-item"><span class="mlabel">SESIÓN</span><span class="mval">ADMIN</span></div>
+            <div class="mhead-item"><span class="mlabel">CUENTAS TOTALES</span><span class="mval" id="h-total">0</span></div>
+            <div class="mhead-item"><span class="mlabel">SESIONES IA</span><span class="mval cyan" id="h-ia">0</span></div>
+            <div class="mhead-item"><span class="mlabel">UPTIME</span><span class="mval cyan" id="h-up">00:00</span></div>
+        </div>
+
+        <div class="mpanel mnums">
+            <div class="mnum"><span class="mv cyan" id="n-est">0</span><span class="ml">ESTUDIANTES ACTIVOS (SIN ADMIN)</span></div>
+            <div class="mnum"><span class="mv white" id="n-cur">0</span><span class="ml">CURSOS PUBLICADOS</span></div>
+            <div class="mnum"><span class="mv white" id="n-lib">0</span><span class="ml">LIBROS EN BIBLIOTECA</span></div>
+            <div class="mnum"><span class="mv amber" id="n-uni">0</span><span class="ml">UNIVERSIDADES</span></div>
+        </div>
+
+        <!-- SONDA REAL: respuesta del servidor + radar de subsistemas -->
+        <div class="mpanel mwave">
+            <div class="mpanel-title"><i class="fas fa-wave-square"></i> Respuesta del servidor · medición real cada 5 s</div>
+            <div class="wave-flex">
+                <div class="radar">
+                    <span class="ring r1"></span>
+                    <span class="ring r2"></span>
+                    <span class="sweep"></span>
+                    <span class="node n1 ok" title="Backend + Base de datos"></span>
+                    <span class="node n2 ok" title="Red / internet"></span>
+                    <span class="node n3 ok" title="APIs externas"></span>
+                    <span class="node n4 ok" title="Archivos del servidor"></span>
+                    <span class="radar-core"><i class="fas fa-microchip"></i></span>
+                </div>
+                <canvas id="spectrum" height="150"></canvas>
+            </div>
+            <div class="mwave-stats">
+                <span>BD/BACKEND <b class="ok" id="w-db">--</b></span>
+                <span>RED <b id="w-red">--</b></span>
+                <span>API EXT <b id="w-api">--</b></span>
+                <span>ARCHIVOS <b id="w-files">--</b></span>
+                <span>ÚLTIMA <b id="w-lat">--</b></span>
+                <span>Ø <b id="w-avg">--</b></span>
+            </div>
+        </div>
+
+        <div class="mpanel mgauge">
+            <div class="mpanel-title"><i class="fas fa-chart-pie"></i> Distribución de cuentas</div>
+            <div class="gauge-wrap">
+                <div class="gauge" id="gauge"><span id="gauge-txt">0%</span></div>
+                <div class="gauge-legend">
+                    <div><i class="dot cyan"></i>Estudiantes <b id="g-est">0</b></div>
+                    <div><i class="dot violet"></i>Admins <b id="g-adm">0</b></div>
+                </div>
+            </div>
+            <div class="mbars" id="mbars"></div>
+        </div>
+
+        <div class="mpanel mfeed">
+            <div class="mpanel-title"><i class="fas fa-satellite-dish"></i> Actividad reciente del Tutor IA</div>
+            <div class="feed" id="feed"><div class="feed-item"><i class="fas fa-circle-notch fa-spin"></i> Escuchando señales…</div></div>
+        </div>
+
+        <div class="mpanel minfo">
+            <div class="minfo-item"><span>BASE DE DATOS</span><b class="ok" id="i-db">SONDEANDO…</b></div>
+            <div class="minfo-item"><span>SERVIDOR</span><b>XAMPP / APACHE</b></div>
+            <div class="minfo-item"><span>SONDAS TOTALES</span><b id="i-probes">0</b></div>
+            <div class="minfo-item"><span>ÚLTIMA SYNC</span><b id="i-sync">--:--:--</b></div>
+        </div>
+    </div>
+</main>
+</div>
+
+<button class="refresh-btn" id="refreshBtn" title="Recalcular ahora"><i class="fas fa-sync-alt"></i></button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+const inicio = Date.now();
+const HIST = 28;
+let probes = [];          // { ms, ok }  ← mediciones REALES
+let totalProbes = 0;
+let apiExtOk = true, filesOk = true;
+
+document.addEventListener('DOMContentLoaded', function(){
+    var logoutBtn = document.getElementById('out');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                localStorage.clear(); sessionStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
+    }
+    var mb = document.querySelector('.mb');
+    if (mb) mb.addEventListener('click', function(){ document.querySelector('.sb').classList.toggle('open'); });
+
+    probe();                      // sonda inmediata
+    setInterval(probe, 5000);     // 💓 latido real cada 5 s
+    probeExt();
+    setInterval(probeExt, 30000); // sondas externas cada 30 s
+    recalcular();
+    setInterval(recalcular, 30000);
+    setInterval(reloj, 1000);
+    requestAnimationFrame(loopSpectrum);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) { probe(); recalcular(); } });
+    document.getElementById('refreshBtn').addEventListener('click', function(){
+        this.style.transform = 'rotate(360deg)';
+        setTimeout(()=> this.style.transform = '', 600);
+        probe(); recalcular();
+    });
+});
+
+function reloj(){
+    document.getElementById('reloj').textContent = new Date().toLocaleTimeString('es-PE');
+    const seg = Math.floor((Date.now() - inicio)/1000);
+    document.getElementById('h-up').textContent = String(Math.floor(seg/60)).padStart(2,'0') + ':' + String(seg%60).padStart(2,'0');
+}
+
+// ====== SONDA REAL #1: backend + base de datos (cada 5 s) ======
+async function probe(){
+    const t0 = performance.now();
+    let ok = false;
+    try {
+        const r = await fetch(BASE + 'UsuarioController.php?accion=mi_perfil', { cache: 'no-store' });
+        const d = await r.json();
+        ok = r.ok && d.ok === true;   // si la sesión muere o la BD cae → ok=false
+    } catch (e) { ok = false; }
+    const ms = Math.round(performance.now() - t0);
+    totalProbes++;
+
+    probes.push({ ms: ok ? ms : 9999, ok });
+    if (probes.length > HIST) probes.shift();
+
+    document.getElementById('w-lat').textContent = ok ? ms + ' ms' : 'FALLO';
+    document.getElementById('w-lat').style.color = ok ? (ms > 500 ? '#fb923c' : '') : '#fb7185';
+    const oks = probes.filter(p => p.ok);
+    document.getElementById('w-avg').textContent = oks.length
+        ? Math.round(oks.reduce((a,p)=>a+p.ms,0) / oks.length) + ' ms' : '--';
+    document.getElementById('i-probes').textContent = totalProbes;
+
+    const dbEl = document.getElementById('w-db');
+    dbEl.textContent = ok ? 'OK' : 'CAÍDA';
+    dbEl.className = ok ? 'ok' : '';
+    dbEl.style.color = ok ? '' : '#fb7185';
+    document.getElementById('i-db').textContent = ok ? 'CONECTADA' : 'SIN RESPUESTA';
+    document.getElementById('i-db').className = ok ? 'ok' : '';
+    document.getElementById('i-db').style.color = ok ? '' : '#fb7185';
+
+    const estado = document.getElementById('h-estado');
+    if (ok) { estado.textContent = '● OPERATIVO'; estado.className = 'mval ok'; }
+    else { estado.textContent = '⚠ SIN RESPUESTA'; estado.className = 'mval'; estado.style.color = '#fb7185'; }
+
+    setNode('n1', ok);
+    setNode('n2', navigator.onLine);
+    document.getElementById('w-red').textContent = navigator.onLine ? 'OK' : 'CAÍDA';
+}
+
+// ====== SONDAS REALES #2 y #3: API externa + archivos estáticos (cada 30 s) ======
+async function probeExt(){
+    try {
+        await fetch('https://www.googleapis.com/books/v1/volumes?q=devioz&maxResults=1', { cache: 'no-store', mode: 'no-cors' });
+        apiExtOk = true;
+    } catch (e) { apiExtOk = false; }
+    try {
+        const r = await fetch('../img/logo-devioz.png', { method: 'HEAD', cache: 'no-store' });
+        filesOk = r.ok;
+    } catch (e) { filesOk = false; }
+
+    setNode('n3', apiExtOk);
+    setNode('n4', filesOk);
+    document.getElementById('w-api').textContent = apiExtOk ? 'EN LÍNEA' : 'SIN CONEXIÓN';
+    document.getElementById('w-api').style.color = apiExtOk ? '' : '#fb7185';
+    document.getElementById('w-files').textContent = filesOk ? 'OK' : 'FALLO';
+    document.getElementById('w-files').style.color = filesOk ? '' : '#fb7185';
+}
+
+function setNode(clase, ok){
+    const n = document.querySelector('.radar .node.' + clase);
+    if (n) n.className = 'node ' + clase + ' ' + (ok ? 'ok' : 'bad');
+}
+
+// ====== ESPECTRO: cada barra = UNA medición real de latencia ======
+const sp = document.getElementById('spectrum');
+const sc = sp.getContext('2d');
+function loopSpectrum(){
+    const w = sp.width = sp.clientWidth, h = sp.height;
+    sc.clearRect(0, 0, w, h);
+
+    sc.strokeStyle = 'rgba(34,217,255,0.06)'; sc.lineWidth = 1;
+    for (let y = 0; y < h; y += 25){ sc.beginPath(); sc.moveTo(0, y); sc.lineTo(w, y); sc.stroke(); }
+    for (let x = 0; x < w; x += 34){ sc.beginPath(); sc.moveTo(x, 0); sc.lineTo(x, h); sc.stroke(); }
+
+    // Escala automática según el peor ms real de la ventana
+    const oks = probes.filter(p => p.ok);
+    const maxMs = Math.max(150, ...oks.map(p => p.ms));
+    const bw = w / HIST;
+
+    for (let i = 0; i < HIST; i++) {
+        const p = probes[i];
+        if (!p) continue;                       // aún no hay medición en ese slot
+        const fallo = !p.ok;
+        const val = fallo ? 1 : Math.min(1, p.ms / maxMs);
+        const bh = Math.max(4, val * (h - 12));
+        const x = i * bw + 2, y = h - bh - 2;
+
+        let color = '#22d9ff';                   // rápido
+        if (fallo) color = '#fb7185';            // caído
+        else if (p.ms > 500) color = '#fb923c';  // lento
+        else if (p.ms > 150) color = '#e879f9';  // medio
+
+        const g = sc.createLinearGradient(0, y, 0, h);
+        g.addColorStop(0, color);
+        g.addColorStop(1, color + '18');
+        sc.fillStyle = g;
+        sc.shadowColor = color; sc.shadowBlur = 9;
+        sc.fillRect(x, y, bw - 4, bh);
+        sc.shadowBlur = 0;
+        sc.fillStyle = 'rgba(255,255,255,.85)';
+        sc.fillRect(x, y, bw - 4, 2);
+    }
+    requestAnimationFrame(loopSpectrum);
+}
+
+// ====== MÉTRICAS DE PLATAFORMA (cada 30 s) ======
+async function recalcular(){
+    const [u,c,l,un,t] = await Promise.allSettled([
+        fetch(BASE+'UsuarioController.php?accion=listar').then(r=>r.json()),
+        fetch(BASE+'CursoController.php?accion=listar').then(r=>r.json()),
+        fetch(BASE+'LibroController.php?accion=contar').then(r=>r.json()),
+        fetch(BASE+'UniversidadController.php?accion=listar').then(r=>r.json()),
+        fetch(BASE+'TutorController.php?accion=listar_conversaciones').then(r=>r.json())
+    ]);
+    const usuarios = (u.status==='fulfilled' && u.value.ok) ? (u.value.data||[]) : [];
+    const est = usuarios.filter(x => (x.rol||'').toLowerCase()==='estudiante' && (x.estado||'').toLowerCase()==='activo').length;
+    const adm = usuarios.filter(x => (x.rol||'').toLowerCase()==='admin').length;
+    const cur = (c.status==='fulfilled' && c.value.ok) ? (c.value.data||[]).length : 0;
+    const lib = (l.status==='fulfilled' && l.value.ok) ? (l.value.data?.total||0) : 0;
+    const uni = (un.status==='fulfilled' && un.value.ok) ? (un.value.data||un.value.datos||[]).length : 0;
+    const convs = (t.status==='fulfilled' && t.value.ok) ? (t.value.data||[]) : [];
+
+    document.getElementById('n-est').textContent = est;
+    document.getElementById('n-cur').textContent = cur;
+    document.getElementById('n-lib').textContent = lib;
+    document.getElementById('n-uni').textContent = uni;
+    document.getElementById('h-total').textContent = usuarios.length;
+    document.getElementById('h-ia').textContent = convs.length;
+
+    const total = Math.max(1, est + adm);
+    const pct = Math.round(est/total*100);
+    document.getElementById('gauge').style.background = 'conic-gradient(#22d9ff ' + pct + '%, rgba(157,148,199,.15) 0)';
+    document.getElementById('gauge-txt').textContent = pct + '%';
+    document.getElementById('g-est').textContent = est;
+    document.getElementById('g-adm').textContent = adm;
+
+    const mods = [{l:'EST',v:est},{l:'CUR',v:cur},{l:'LIB',v:lib},{l:'UNI',v:uni}];
+    const max = Math.max(1, ...mods.map(m=>m.v));
+    document.getElementById('mbars').innerHTML = mods.map(m =>
+        '<div class="mbar"><div class="bar" style="height:' + Math.max(6, Math.round(m.v/max*100)) + '%"></div><span>' + m.l + '</span></div>'
+    ).join('');
+
+    const feed = document.getElementById('feed');
+    feed.innerHTML = convs.length
+        ? convs.slice(0,8).map(cv => '<div class="feed-item"><i class="fas fa-comments"></i> ' + cv.titulo + '<time>' + (cv.updated_at||'').slice(11,16) + '</time></div>').join('')
+        : '<div class="feed-item"><i class="fas fa-moon"></i> Sin actividad de IA todavía. Las conversaciones del Tutor aparecerán aquí.</div>';
+
+    const sync = new Date().toLocaleTimeString('es-PE');
+    document.getElementById('i-sync').textContent = sync;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inicio | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/estudiante.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <div class="nav-links" id="navLinks">
+        <a href="dashboard_estudiante.html" class="on"><i class="fas fa-home"></i> Inicio</a>
+        <a href="universidades_estudiante.html"><i class="fas fa-university"></i> Universidades</a>
+        <a href="biblioteca_estudiante.html"><i class="fas fa-book"></i> Biblioteca</a>
+        <a href="cursos_estudiante.html"><i class="fas fa-book-open"></i> Mis Cursos</a>
+        <a href="arcade_estudiante.html"><i class="fas fa-gamepad"></i> Arcade</a>
+        <a href="chat_ia.html" class="tutor"><i class="fas fa-robot"></i> Tutor IA</a>
+        <a href="perfil_estudiante.html"><i class="fas fa-user"></i> Mi Cuenta</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user"><div class="nav-avatar" id="navAvatar">E</div><span class="nav-name" id="navNombre">Estudiante</span></div>
+        <button class="nav-out" id="out" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+        <button class="nav-burger" onclick="document.getElementById('navLinks').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+    </div>
+</nav>
+
+<main class="main">
+    <section class="hero">
+        <h1>¡Hola, <span id="heroNombre">estudiante</span>! 👋</h1>
+        <p>Todo lo que necesitas para estudiar está aquí: tus cursos guardados, la biblioteca de tu universidad, el Arena de juegos y tu tutor personal.</p>
+        <div class="hero-chips">
+            <span class="uni-chip" id="chipUni"><i class="fas fa-university"></i> Sin universidad</span>
+            <a class="hero-chip" href="universidades_estudiante.html"><i class="fas fa-exchange-alt"></i> Cambiar</a>
+        </div>
+    </section>
+
+    <div class="stats">
+        <div class="stat-card"><div class="stat-icon i1"><i class="fas fa-book-open"></i></div><div><h2 id="statCursos">0</h2><p>Mis cursos</p></div></div>
+        <div class="stat-card"><div class="stat-icon i2"><i class="fas fa-book"></i></div><div><h2 id="statLibros">0</h2><p>Libros de mi uni</p></div></div>
+        <div class="stat-card"><div class="stat-icon i3"><i class="fas fa-gamepad"></i></div><div><h2 id="statArena">0</h2><p>Partidas Arena</p></div></div>
+    </div>
+
+    <h2 class="section-title"><i class="fas fa-bolt"></i> Lo que necesitas para estudiar</h2>
+    <div class="grid-cards">
+        <div class="card-x">
+            <div class="cx-icon"><i class="fas fa-university"></i></div>
+            <h3>Universidades</h3>
+            <p>Elige o cambia tu universidad de preferencia y explora otras instituciones.</p>
+            <a class="btn sm" href="universidades_estudiante.html"><i class="fas fa-arrow-right"></i> Ver</a>
+        </div>
+        <div class="card-x">
+            <div class="cx-icon"><i class="fas fa-book"></i></div>
+            <h3>Biblioteca</h3>
+            <p>Libros de tu universidad clasificados por categoría, nivel y ciclo.</p>
+            <a class="btn sm" href="biblioteca_estudiante.html"><i class="fas fa-arrow-right"></i> Explorar</a>
+        </div>
+        <div class="card-x">
+            <div class="cx-icon"><i class="fas fa-book-open"></i></div>
+            <h3>Mis cursos</h3>
+            <p>Los libros que guardaste para estudiar, con PDF y acceso directo al tutor.</p>
+            <a class="btn sm" href="cursos_estudiante.html"><i class="fas fa-arrow-right"></i> Entrar</a>
+        </div>
+        <div class="card-x">
+            <div class="cx-icon"><i class="fas fa-gamepad"></i></div>
+            <h3>Arena de juegos</h3>
+            <p>Dragón, Invasión Galáctica, Memoria y Flashcards. Aprende jugando y gana XP.</p>
+            <a class="btn sm" href="arcade_estudiante.html"><i class="fas fa-arrow-right"></i> Jugar</a>
+        </div>
+        <div class="card-x">
+            <div class="cx-icon"><i class="fas fa-robot"></i></div>
+            <h3>Tutor IA</h3>
+            <p>Fórmulas, resúmenes, cuadros y libros completos. Todo queda en tu historial.</p>
+            <a class="btn sm" href="chat_ia.html"><i class="fas fa-arrow-right"></i> Preguntar</a>
+        </div>
+    </div>
+
+    <h2 class="section-title"><i class="fas fa-history"></i> Sigue donde lo dejaste</h2>
+    <div id="continuar"><p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando...</p></div>
+
+    <footer class="footer">Devioz Academy © 2025 — Todo lo que necesitas para aprender</footer>
+</main>
+
+<div class="modal" id="modalUni">
+    <div class="mbox">
+        <h3>🎓 Elige tu universidad</h3>
+        <p style="color:var(--mu);font-size:.9rem;margin-bottom:16px;">Para darte acceso a la biblioteca correcta y a tus ciclos, dime a qué universidad deseas prepararte.</p>
+        <div class="f">
+            <label><i class="fas fa-university"></i> Universidad de preferencia</label>
+            <select id="uniSelect"><option value="">Cargando...</option></select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn" id="btnGuardarUni"><i class="fas fa-check"></i> Guardar y continuar</button>
+            <button class="btn ghost" id="btnSaltarUni"><i class="fas fa-forward"></i> Después</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let pref = { configurado:false, universidad_id:null, universidad_nombre:null };
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('out').onclick = () => { if(confirm('¿Cerrar sesión?')){ localStorage.clear(); sessionStorage.clear(); location.href='index.html'; } };
+    document.getElementById('btnGuardarUni').onclick = guardarPreferencia;
+    document.getElementById('btnSaltarUni').onclick = () => document.getElementById('modalUni').classList.remove('open');
+
+    await cargarSesion();
+    await cargarUniversidades();
+    await checkPreferencia();
+    await cargarStats();
+    await cargarContinuar();
+});
+
+async function cargarSesion(){
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php?accion=mi_perfil')).json();
+        if(d.ok && d.data){
+            document.getElementById('navNombre').textContent = d.data.nombre;
+            document.getElementById('heroNombre').textContent = (d.data.nombre || '').split(' ')[0] || 'estudiante';
+            document.getElementById('navAvatar').innerHTML = d.data.foto ? `<img src="${d.data.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : d.data.nombre.charAt(0).toUpperCase();
+        }
+    }catch(e){}
+}
+async function cargarUniversidades(){
+    const d = await (await fetch(BASE+'UniversidadController.php?accion=listar')).json();
+    const unis = (d.ok ? d.data : []) || [];
+    document.getElementById('uniSelect').innerHTML = '<option value="">Selecciona...</option>' + unis.map(u=>`<option value="${u.id}">${u.nombre}</option>`).join('');
+}
+async function checkPreferencia(){
+    const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=preferencia')).json();
+    if(d.ok) pref = d.data;
+    if(pref.universidad_nombre){
+        document.getElementById('chipUni').innerHTML = `<i class="fas fa-university"></i> ${pref.universidad_nombre}`;
+        document.getElementById('chipUni').className = 'uni-chip mia';
+    }
+    if(!pref.configurado) document.getElementById('modalUni').classList.add('open');
+}
+async function guardarPreferencia(){
+    const v = document.getElementById('uniSelect').value;
+    if(!v){ alert('Selecciona una universidad'); return; }
+    const fd = new FormData(); fd.append('universidad_id', v);
+    const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=guardar_preferencia',{method:'POST',body:fd})).json();
+    if(d.ok){ document.getElementById('modalUni').classList.remove('open'); location.reload(); }
+    else alert(d.msg);
+}
+
+async function cargarStats(){
+    try{
+        const [mis, lib, xp] = await Promise.all([
+            (await fetch(BASE+'BibliotecaEstudianteController.php?accion=mis_libros')).json(),
+            (await fetch(BASE+'BibliotecaEstudianteController.php?accion=libros' + (pref.universidad_id ? '?universidad_id='+pref.universidad_id : ''))).json(),
+            (await fetch(BASE+'ArenaController.php?accion=mi_xp')).json()
+        ]);
+        document.getElementById('statCursos').textContent = (mis.ok ? mis.data : []).length;
+        document.getElementById('statLibros').textContent = (lib.ok ? lib.data : []).length;
+        document.getElementById('statArena').textContent = (xp.ok ? xp.data.partidas : 0);
+    }catch(e){}
+}
+
+async function cargarContinuar(){
+    const box = document.getElementById('continuar');
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=mis_libros')).json();
+        const lista = (d.ok ? d.data : []) || [];
+        if(!lista.length){
+            box.innerHTML = '<p class="empty"><i class="fas fa-book"></i> Aún no guardas libros. <a href="biblioteca_estudiante.html">Explora la biblioteca</a> y agrega los que quieras estudiar.</p>';
+            return;
+        }
+        box.innerHTML = lista.slice(0,4).map(l => `
+            <div class="mini-row">
+                <div class="info">
+                    <h4>${l.nombre}</h4>
+                    <small>${l.universidad_nombre || '—'}${l.categoria_nombre ? ' · ' + l.categoria_nombre : ''}</small>
+                </div>
+                <div class="actions">
+                    <a class="btn sm" href="/lms_prepa/${l.pdf_url}" target="_blank"><i class="fas fa-file-pdf"></i> Abrir</a>
+                    <a class="btn sm ghost" href="chat_ia.html?q=${encodeURIComponent('Explícame: '+l.nombre)}"><i class="fas fa-robot"></i> Tutor</a>
+                </div>
+            </div>`).join('');
+    }catch(e){
+        box.innerHTML = '<p class="empty" style="color:var(--er);"><i class="fas fa-exclamation-triangle"></i> Error al cargar</p>';
+    }
+}
+</script>
+</body>
+</html>

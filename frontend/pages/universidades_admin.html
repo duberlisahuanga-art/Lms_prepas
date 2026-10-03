@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universidades | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="../css/panel.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* ===== TOASTS ===== */
+    .toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 14px 20px; border-radius: 8px; color: #fff; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideIn 0.3s ease-out; max-width: 350px; }
+    .toast.success { background: linear-gradient(135deg, #10b981, #059669); }
+    .toast.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .toast.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+
+    /* ===== ESTADOS DE CARGA ===== */
+    .btn-loading { pointer-events: none; opacity: 0.7; }
+    .btn-loading i { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* ===== RESULTADOS DE BÚSQUEDA (TEMA OSCURO) ===== */
+    .ia-search-result {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(0,255,255,0.12);
+        border-left: 3px solid var(--glow, #00ffff);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        transition: all .25s ease;
+    }
+    .ia-search-result:hover {
+        background: rgba(0,255,255,0.06);
+        transform: translateX(4px);
+        border-color: rgba(0,255,255,0.35);
+    }
+    .ia-search-result h4 { margin: 0 0 6px 0; color: #fff; font-size: 1rem; font-weight: 600; }
+    .ia-search-result small { color: var(--mu, #9aa4b2); }
+    .ia-num { color: var(--glow, #00ffff); font-weight: 700; margin-right: 6px; }
+    .ia-search-result a { color: var(--glow, #00ffff); margin-left: 8px; }
+
+    /* ===== ETIQUETA DE FUENTE ===== */
+    .fuente-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.72rem; padding: 2px 8px;
+        background: rgba(16,185,129,0.12); color: #34d399;
+        border-radius: 4px; margin-left: 6px;
+    }
+
+    /* ===== CONTADORES Y PANEL ===== */
+    .contador-badge { background: var(--glow, #00ffff); color: #001014; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; margin-left: 8px; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .panel-close { background: none; border: none; color: var(--mu, #9aa4b2); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; }
+    .panel-close:hover { color: #ef4444; }
+    .nota-panel { color: var(--mu, #9aa4b2); font-size: 0.85rem; margin-top: -8px; }
+
+    /* ===== ESTADOS VACÍOS ===== */
+    .empty-smart { text-align: center; padding: 30px; color: var(--mu, #9aa4b2); }
+    .empty-smart i { font-size: 2.5rem; margin-bottom: 10px; color: var(--mu, #9aa4b2); opacity: 0.5; display: block; }
+
+    /* ===== DEBUG PANEL ===== */
+    .debug-info {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 10px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #9aa4b2;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+</style>
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <a href="dashboard_admin.html"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="estudiantes_admin.html"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="cursos_admin.html"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html" class="on"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="monitoreo_admin.html"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html"><i class="fas fa-user-shield"></i><span>Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Gestión de Universidades e Institutos</h1>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn" onclick="abrirModal()"><i class="fas fa-plus"></i> MANUAL</button>
+            <button class="btn" onclick="investigarIA('nacionales', this)"><i class="fas fa-search"></i> IA: NACIONALES</button>
+            <button class="btn" onclick="investigarIA('particulares', this)"><i class="fas fa-search"></i> IA: PARTICULARES</button>
+            <button class="btn" onclick="investigarIA('institutos', this)"><i class="fas fa-graduation-cap"></i> IA: INSTITUTOS</button>
+        </div>
+    </div>
+
+    <div class="card" id="panelIA" style="display:none;">
+        <div class="panel-header">
+            <h3><i class="fas fa-globe"></i> Disponibles en internet (Perú) <span class="contador-badge" id="contadorIA">0</span></h3>
+            <button class="panel-close" onclick="cerrarPanelIA()" title="Cerrar"><i class="fas fa-times"></i></button>
+        </div>
+        <p class="nota-panel"><i class="fas fa-info-circle"></i> Solo se muestran los que <strong>aún no has registrado</strong>. Al agregar uno, desaparece de esta lista.</p>
+        <div id="listaIA" style="margin-top:15px;"></div>
+    </div>
+
+    <div class="card">
+        <h3><i class="fas fa-database"></i> Registradas <span class="contador-badge" id="contadorReg">0</span></h3>
+        <div id="listaUniversidades"><p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando...</p></div>
+    </div>
+</main>
+</div>
+
+<div class="modal" id="modalUni">
+    <div class="mbox">
+        <button class="modal-close" onclick="cerrarModal()"><i class="fas fa-times"></i></button>
+        <h3>Nueva Universidad / Instituto</h3>
+        <form id="formUni">
+            <div class="f"><label>Nombre *</label><input type="text" id="uNombre" required placeholder="Ej: Universidad San Marcos / SENATI"></div>
+            <div class="f"><label>País</label><input type="text" id="uPais" value="Perú"></div>
+            <div class="f"><label>Ciudad</label><input type="text" id="uCiudad" value="Lima"></div>
+            <div class="f"><label>Tipo</label>
+                <select id="uTipo">
+                    <option value="nacional">Universidad Nacional</option>
+                    <option value="particular">Universidad Particular</option>
+                    <option value="instituto">Instituto Superior</option>
+                </select>
+            </div>
+            <div class="f"><label>Descripción (opcional)</label><textarea id="uDescripcion" rows="3" placeholder="Breve descripción de la institución..."></textarea></div>
+            <div class="f"><label>Sitio web (opcional)</label><input type="url" id="uWeb" placeholder="https://www.universidad.edu.pe"></div>
+            <div class="f"><label>Estado</label>
+                <select id="uEstado">
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn" id="btnGuardar"><i class="fas fa-save"></i> Guardar</button>
+                <button type="button" class="btn gh" onclick="cerrarModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarUniversidades();
+    document.getElementById('out').onclick = e => {
+        e.preventDefault();
+        if (confirm('¿Cerrar sesión?')) { localStorage.clear(); sessionStorage.clear(); window.location.href = 'index.html'; }
+    };
+    document.getElementById('formUni').onsubmit = async e => { e.preventDefault(); await guardarUniversidadManual(); };
+    
+    // Botón de menú móvil
+    const mb = document.querySelector('.mb');
+    if (mb) mb.addEventListener('click', () => document.querySelector('.sb').classList.toggle('open'));
+});
+
+function toast(msg, tipo = 'info') {
+    const c = document.getElementById('toastContainer');
+    const d = document.createElement('div');
+    d.className = 'toast ' + tipo;
+    d.innerHTML = msg;
+    c.appendChild(d);
+    setTimeout(() => { d.style.opacity = '0'; setTimeout(() => d.remove(), 300); }, 3500);
+}
+
+async function cargarUniversidades() {
+    const box = document.getElementById('listaUniversidades');
+    try {
+        const res = await fetch(BASE + 'UniversidadController.php?accion=listar');
+        const data = await res.json();
+        
+        console.log('[Devioz] Respuesta listar universidades:', data);
+        
+        document.getElementById('contadorReg').textContent = data.data?.length || 0;
+        if (!data.ok || !data.data?.length) {
+            box.innerHTML = '<div class="empty-smart"><i class="fas fa-university"></i>Sin registros aún</div>';
+            return;
+        }
+        let html = '<table><thead><tr><th>ID</th><th>Nombre</th><th>Ciudad</th><th>Tipo</th><th>Acción</th></tr></thead><tbody>';
+        data.data.forEach(u => {
+            const tc = u.tipo === 'particular' ? 'particular' : (u.tipo === 'instituto' ? 'instituto' : 'nacional');
+            html += `<tr>
+                <td>${u.id}</td>
+                <td><strong>${u.nombre}</strong></td>
+                <td>${u.ciudad || '—'}</td>
+                <td><span class="badge ${tc}">${u.tipo || 'nacional'}</span></td>
+                <td><button class="btn sm dg" onclick="eliminarUniversidad(${u.id}, '${u.nombre.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button></td>
+            </tr>`;
+        });
+        box.innerHTML = html + '</tbody></table>';
+    } catch (e) {
+        console.error('[Devioz] Error al cargar universidades:', e);
+        box.innerHTML = '<div class="empty-smart"><i class="fas fa-exclamation-triangle"></i>Error al cargar datos</div>';
+        toast('Error al cargar universidades', 'error');
+    }
+}
+
+async function investigarIA(tipo, btn) {
+    const panel = document.getElementById('panelIA');
+    const lista = document.getElementById('listaIA');
+    const orig = btn.innerHTML;
+
+    btn.classList.add('btn-loading');
+    btn.innerHTML = '<i class="fas fa-spinner"></i> Buscando...';
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    lista.innerHTML = '<div class="empty-smart"><i class="fas fa-spinner fa-spin"></i>Consultando internet (Perú)...</div>';
+
+    try {
+        const fd = new FormData();
+        fd.append('tipo', tipo);
+        fd.append('admin_id', 1);
+        const res = await fetch(BASE + 'IAController.php?accion=investigarUniversidades', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        btn.classList.remove('btn-loading');
+        btn.innerHTML = orig;
+
+        if (!data.ok || !data.data?.length) {
+            lista.innerHTML = `<div class="empty-smart"><i class="fas fa-info-circle"></i>${data.msg || 'No se encontraron resultados'}</div>`;
+            document.getElementById('contadorIA').textContent = '0';
+            return;
+        }
+
+        document.getElementById('contadorIA').textContent = data.data.length;
+        toast(`<i class="fas fa-check-circle"></i> ${data.msg}`, 'success');
+
+        let html = '';
+        data.data.forEach((u, i) => {
+            const tb = u.tipo === 'particular' ? 'particular' : (u.tipo === 'instituto' ? 'instituto' : 'nacional');
+            const urlLink = u.url ? `<a href="${u.url}" target="_blank"><i class="fas fa-external-link-alt"></i></a>` : '';
+            html += `<div class="ia-search-result">
+                <div style="flex:1; min-width:0;">
+                    <h4><span class="ia-num">${i+1}.</span>${u.nombre}${urlLink}</h4>
+                    <p style="margin:0;"><small>📍 ${u.ciudad} <span class="badge ${tb}" style="margin-left:6px;">${u.tipo}</span> <span class="fuente-tag"><i class="fas fa-globe"></i> Internet</span></small></p>
+                </div>
+                <button class="btn sm" onclick="registrarDesdeIA('${u.nombre.replace(/'/g, "\\'")}', '${u.tipo}', '${u.ciudad}', this)"><i class="fas fa-plus"></i> Agregar</button>
+            </div>`;
+        });
+        lista.innerHTML = html;
+    } catch (e) {
+        btn.classList.remove('btn-loading');
+        btn.innerHTML = orig;
+        lista.innerHTML = `<div class="empty-smart"><i class="fas fa-exclamation-triangle"></i>Error: ${e.message}</div>`;
+        toast('Error al buscar: ' + e.message, 'error');
+    }
+}
+
+async function registrarDesdeIA(nombre, tipo, ciudad, btn) {
+    const orig = btn.innerHTML;
+    btn.classList.add('btn-loading');
+    btn.innerHTML = '<i class="fas fa-spinner"></i>';
+    
+    const fd = new FormData();
+    fd.append('accion', 'crear');
+    fd.append('nombre', nombre);
+    fd.append('pais', 'Perú');
+    fd.append('ciudad', ciudad);
+    fd.append('tipo', tipo);
+    fd.append('estado', 'activo');
+    fd.append('descripcion', '');
+    fd.append('web', '');
+    
+    console.log('[Devioz] Enviando a backend (IA):', {
+        accion: 'crear',
+        nombre, pais: 'Perú', ciudad, tipo, estado: 'activo'
+    });
+    
+    try {
+        const res = await fetch(BASE + 'UniversidadController.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        
+        console.log('[Devioz] Respuesta backend (IA):', data);
+        
+        if (data.ok) {
+            toast(`<i class="fas fa-check-circle"></i> ${data.msg}`, 'success');
+            const item = btn.closest('.ia-search-result');
+            item.style.transition = 'all 0.4s';
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(50px)';
+            setTimeout(() => {
+                item.remove();
+                actualizarContadorIA();
+                if (document.querySelectorAll('#listaIA .ia-search-result').length === 0) {
+                    document.getElementById('listaIA').innerHTML = '<div class="empty-smart"><i class="fas fa-check-circle"></i>¡Registraste todo lo disponible en esta lista!</div>';
+                }
+            }, 400);
+            cargarUniversidades();
+        } else {
+            toast(`<i class="fas fa-times-circle"></i> ${data.msg}`, 'error');
+            btn.classList.remove('btn-loading');
+            btn.innerHTML = orig;
+        }
+    } catch (e) {
+        console.error('[Devioz] Error al registrar desde IA:', e);
+        toast('Error: ' + e.message, 'error');
+        btn.classList.remove('btn-loading');
+        btn.innerHTML = orig;
+    }
+}
+
+function actualizarContadorIA() {
+    document.getElementById('contadorIA').textContent = document.querySelectorAll('#listaIA .ia-search-result').length;
+}
+
+function cerrarPanelIA() {
+    document.getElementById('panelIA').style.display = 'none';
+}
+
+async function guardarUniversidadManual() {
+    const b = document.getElementById('btnGuardar');
+    const orig = b.innerHTML;
+    b.classList.add('btn-loading');
+    b.innerHTML = '<i class="fas fa-spinner"></i> Guardando...';
+    
+    const datos = {
+        accion: 'crear',
+        nombre: document.getElementById('uNombre').value.trim(),
+        pais: document.getElementById('uPais').value.trim() || 'Perú',
+        ciudad: document.getElementById('uCiudad').value.trim() || 'Lima',
+        tipo: document.getElementById('uTipo').value,
+        descripcion: document.getElementById('uDescripcion').value.trim(),
+        web: document.getElementById('uWeb').value.trim(),
+        estado: document.getElementById('uEstado').value
+    };
+    
+    console.log('[Devioz] Datos a enviar (manual):', datos);
+    
+    const fd = new FormData();
+    Object.keys(datos).forEach(key => fd.append(key, datos[key]));
+    
+    try {
+        const res = await fetch(BASE + 'UniversidadController.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        
+        console.log('[Devioz] Respuesta backend (manual):', data);
+        
+        if (data.ok) {
+            toast(`<i class="fas fa-check-circle"></i> Registrado correctamente`, 'success');
+            cerrarModal();
+            cargarUniversidades();
+        } else {
+            toast(`<i class="fas fa-times-circle"></i> ${data.msg || 'Error al guardar'}`, 'error');
+        }
+    } catch (e) {
+        console.error('[Devioz] Error al guardar manual:', e);
+        toast('Error: ' + e.message, 'error');
+    } finally {
+        b.classList.remove('btn-loading');
+        b.innerHTML = orig;
+    }
+}
+
+async function eliminarUniversidad(id, nombre) {
+    if (!confirm(`¿Eliminar "${nombre}"?`)) return;
+    try {
+        const fd = new FormData();
+        fd.append('accion', 'eliminar');
+        fd.append('id', id);
+        const res = await fetch(BASE + 'UniversidadController.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) {
+            toast(`<i class="fas fa-check-circle"></i> ${data.msg}`, 'success');
+            cargarUniversidades();
+        } else {
+            toast(`<i class="fas fa-times-circle"></i> ${data.msg}`, 'error');
+        }
+    } catch (e) {
+        toast('Error: ' + e.message, 'error');
+    }
+}
+
+function abrirModal() {
+    document.getElementById('modalUni').classList.add('open');
+    setTimeout(() => document.getElementById('uNombre').focus(), 200);
+}
+
+function cerrarModal() {
+    document.getElementById('modalUni').classList.remove('open');
+    document.getElementById('formUni').reset();
+    document.getElementById('uPais').value = 'Perú';
+    document.getElementById('uCiudad').value = 'Lima';
+    document.getElementById('uEstado').value = 'activo';
+}
+</script>
+</body>
+</html>

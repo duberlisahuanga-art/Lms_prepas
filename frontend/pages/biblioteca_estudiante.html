@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblioteca | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/estudiante.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <div class="nav-links" id="navLinks">
+        <a href="dashboard_estudiante.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="universidades_estudiante.html"><i class="fas fa-university"></i> Universidades</a>
+        <a href="biblioteca_estudiante.html" class="on"><i class="fas fa-book"></i> Biblioteca</a>
+        <a href="cursos_estudiante.html"><i class="fas fa-book-open"></i> Mis Cursos</a>
+        <a href="arcade_estudiante.html"><i class="fas fa-gamepad"></i> Arcade</a>
+        <a href="chat_ia.html" class="tutor"><i class="fas fa-robot"></i> Tutor IA</a>
+        <a href="perfil_estudiante.html"><i class="fas fa-user"></i> Mi Cuenta</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user"><div class="nav-avatar" id="navAvatar">E</div><span class="nav-name" id="navNombre">Estudiante</span></div>
+        <button class="nav-out" id="out" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+        <button class="nav-burger" onclick="document.getElementById('navLinks').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+    </div>
+</nav>
+
+<main class="main">
+    <section class="hero">
+        <h1>Biblioteca 📚</h1>
+        <p>Los libros y guías en PDF de tu universidad, clasificados por categoría, nivel y ciclo. Guarda en Mis Cursos solo lo que quieres estudiar.</p>
+        <div class="hero-chips">
+            <span class="uni-chip" id="chipUni"><i class="fas fa-university"></i> Sin universidad</span>
+            <span id="uniActions" style="display:inline-flex;gap:8px;flex-wrap:wrap;"></span>
+            <span class="hero-chip" id="chipMis"><i class="fas fa-bookmark"></i> 0 en Mis Cursos</span>
+        </div>
+    </section>
+
+    <div id="avisoError" class="aviso" style="display:none;background:rgba(251,113,133,.08);border-color:rgba(251,113,133,.4);color:var(--er);"></div>
+    <div id="avisoSinUni" class="aviso" style="display:none;">
+        <i class="fas fa-info-circle"></i> No tienes universidad seleccionada: estás viendo TODA la biblioteca. Elige una para acceder solo a sus libros.
+    </div>
+
+    <div class="filter-bar">
+        <div class="f" style="flex:2;"><input type="text" id="fBuscar" placeholder="🔍 Buscar libro..."></div>
+        <div class="f"><select id="fUni"><option value="">Todas las universidades</option></select></div>
+        <div class="f"><select id="fCat"><option value="">Todas las categorías</option></select></div>
+        <div class="f"><select id="fNiv"><option value="">Todos los niveles</option></select></div>
+        <div class="f"><select id="fCic"><option value="">Todos los ciclos</option></select></div>
+    </div>
+
+    <div id="contenido"><p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando biblioteca...</p></div>
+    <footer class="footer">Devioz Academy © 2025</footer>
+</main>
+
+<div class="modal" id="modalUni">
+    <div class="mbox">
+        <h3>🎓 Elige tu universidad</h3>
+        <p style="color:var(--mu);font-size:.9rem;margin-bottom:16px;">Tu universidad seleccionada te da acceso a su biblioteca de libros, niveles y ciclos.</p>
+        <div class="f">
+            <label><i class="fas fa-university"></i> Universidad de preferencia</label>
+            <select id="uniSelect"><option value="">Cargando...</option></select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn" id="btnGuardarUni"><i class="fas fa-check"></i> Guardar y continuar</button>
+            <button class="btn ghost" id="btnSaltarUni"><i class="fas fa-forward"></i> Después</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let pref = { configurado:false, universidad_id:null, universidad_nombre:null };
+let unis = [], librosAll = [], misIds = new Set();
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('out').onclick = () => { if(confirm('¿Cerrar sesión?')){ localStorage.clear(); sessionStorage.clear(); location.href='index.html'; } };
+    ['fBuscar','fUni','fCat','fNiv','fCic'].forEach(id => document.getElementById(id).addEventListener('input', render));
+    document.getElementById('btnGuardarUni').onclick = guardarPreferencia;
+    document.getElementById('btnSaltarUni').onclick = () => document.getElementById('modalUni').classList.remove('open');
+
+    await cargarSesion();
+    await cargarUniversidades();
+    await checkPreferencia();
+    await Promise.all([cargarLibros(), cargarMisLibros()]);
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('uni')) document.getElementById('fUni').value = params.get('uni');
+    else if (pref.universidad_id) document.getElementById('fUni').value = pref.universidad_id;
+
+    actualizarUniUI();
+    actualizarChipMis();
+    render();
+});
+
+function errorVisible(msg){
+    const el = document.getElementById('avisoError');
+    el.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + msg;
+    el.style.display = 'flex';
+}
+
+async function cargarSesion(){
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php?accion=mi_perfil')).json();
+        if(d.ok && d.data){
+            document.getElementById('navNombre').textContent = d.data.nombre;
+            document.getElementById('navAvatar').innerHTML = d.data.foto ? `<img src="${d.data.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : d.data.nombre.charAt(0).toUpperCase();
+        }
+    }catch(e){ errorVisible('No se pudo cargar tu perfil.'); }
+}
+async function cargarUniversidades(){
+    try{
+        const d = await (await fetch(BASE+'UniversidadController.php?accion=listar')).json();
+        unis = (d.ok ? d.data : []) || [];
+        document.getElementById('uniSelect').innerHTML = '<option value="">Selecciona...</option>' + unis.map(u=>`<option value="${u.id}">${u.nombre}${u.ciudad?' ('+u.ciudad+')':''}</option>`).join('');
+        document.getElementById('fUni').innerHTML = '<option value="">Todas las universidades</option>' + unis.map(u=>`<option value="${u.id}">${u.nombre}</option>`).join('');
+    }catch(e){ errorVisible('No se pudo cargar Universidades.'); }
+}
+async function checkPreferencia(){
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=preferencia')).json();
+        if(d.ok) pref = d.data;
+        if(!pref.configurado) document.getElementById('modalUni').classList.add('open');
+    }catch(e){ errorVisible('No se encontró BibliotecaEstudianteController.php.'); }
+}
+
+function actualizarUniUI(){
+    const chip = document.getElementById('chipUni');
+    const acts = document.getElementById('uniActions');
+    const aviso = document.getElementById('avisoSinUni');
+    if(pref.universidad_id){
+        chip.innerHTML = `<i class="fas fa-university"></i> ${pref.universidad_nombre}`;
+        chip.className = 'uni-chip mia';
+        acts.innerHTML = `
+            <button class="hero-chip" onclick="abrirOnboarding()"><i class="fas fa-exchange-alt"></i> Cambiar</button>
+            <button class="hero-chip" style="border-color:rgba(251,113,133,.4);color:var(--er);" onclick="deselegir()"><i class="fas fa-times"></i> Deselegir</button>`;
+        aviso.style.display = 'none';
+    } else {
+        chip.innerHTML = `<i class="fas fa-university"></i> Sin universidad`;
+        chip.className = 'uni-chip';
+        acts.innerHTML = `<button class="hero-chip" onclick="abrirOnboarding()"><i class="fas fa-star"></i> Elegir universidad</button>`;
+        aviso.style.display = 'flex';
+    }
+}
+function actualizarChipMis(){
+    document.getElementById('chipMis').innerHTML = `<i class="fas fa-bookmark"></i> ${misIds.size} en Mis Cursos`;
+}
+function abrirOnboarding(){ document.getElementById('modalUni').classList.add('open'); }
+
+async function guardarPreferencia(){
+    const v = document.getElementById('uniSelect').value;
+    if(!v){ alert('Selecciona una universidad'); return; }
+    const fd = new FormData(); fd.append('universidad_id', v);
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=guardar_preferencia',{method:'POST',body:fd})).json();
+        if(d.ok){ document.getElementById('modalUni').classList.remove('open'); location.reload(); }
+        else alert('⚠️ ' + (d.msg || 'Error'));
+    }catch(e){ errorVisible('Error al guardar la preferencia.'); }
+}
+async function deselegir(){
+    if(!confirm('¿Deselegir tu universidad?\nVerás toda la biblioteca y podrás elegir otra cuando quieras.')) return;
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=quitar_preferencia',{method:'POST'})).json();
+        if(d.ok) location.reload(); else alert('⚠️ ' + (d.msg || 'Error'));
+    }catch(e){ errorVisible('Error al deselegir.'); }
+}
+
+async function cargarLibros(){
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=libros')).json();
+        librosAll = (d.ok ? d.data : []) || [];
+        const cats = [...new Set(librosAll.map(l=>l.categoria_nombre).filter(Boolean))];
+        const nivs = [...new Set(librosAll.map(l=>l.nivel_nombre).filter(Boolean))];
+        const cics = [...new Set(librosAll.map(l=>l.ciclo_nombre).filter(Boolean))];
+        document.getElementById('fCat').innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+        document.getElementById('fNiv').innerHTML = '<option value="">Todos los niveles</option>' + nivs.map(c=>`<option>${c}</option>`).join('');
+        document.getElementById('fCic').innerHTML = '<option value="">Todos los ciclos</option>' + cics.map(c=>`<option>${c}</option>`).join('');
+    }catch(e){ errorVisible('Error al cargar los libros.'); }
+}
+async function cargarMisLibros(){
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=mis_libros')).json();
+        misIds = new Set(((d.ok ? d.data : []) || []).map(x => String(x.id)));
+    }catch(e){ errorVisible('Error al leer Mis Cursos.'); }
+}
+
+function render(){
+    const box = document.getElementById('contenido');
+    const q = document.getElementById('fBuscar').value.toLowerCase();
+    const fu = document.getElementById('fUni').value, fc = document.getElementById('fCat').value,
+          fn = document.getElementById('fNiv').value, fi = document.getElementById('fCic').value;
+
+    let lista = librosAll.filter(l =>
+        (!fu || l.universidad_id == fu) && (!fc || l.categoria_nombre === fc) &&
+        (!fn || l.nivel_nombre === fn) && (!fi || l.ciclo_nombre === fi) &&
+        (!q || (l.nombre+' '+(l.descripcion||'')).toLowerCase().includes(q))
+    );
+
+    if(!lista.length){ box.innerHTML = '<p class="empty"><i class="fas fa-book"></i> No hay libros con esos filtros.</p>'; return; }
+
+    const grupos = {};
+    lista.forEach(l => { const g = l.categoria_nombre || 'Sin categoría'; (grupos[g] = grupos[g] || []).push(l); });
+
+    let html = '';
+    Object.keys(grupos).sort().forEach(g => {
+        html += `<h2 class="section-title"><i class="fas fa-tags"></i> ${g} <span class="badge">${grupos[g].length}</span></h2><div class="grid-cards">`;
+        grupos[g].forEach(l => {
+            const agregado = misIds.has(String(l.id));
+            html += `<div class="book-card">
+                <div class="cc-head"><h3 class="cc-title">${l.nombre}</h3><span class="badge uni">${l.universidad_nombre || 'General'}</span></div>
+                <p>${l.descripcion || 'Sin descripción.'}</p>
+                <div class="cc-meta">
+                    ${l.nivel_nombre ? `<span><i class="fas fa-layer-group"></i>${l.nivel_nombre}</span>` : ''}
+                    ${l.ciclo_nombre ? `<span><i class="fas fa-calendar-alt"></i>${l.ciclo_nombre}</span>` : ''}
+                </div>
+                <div class="cc-actions">
+                    <a class="btn sm" href="/lms_prepa/${l.pdf_url}" target="_blank"><i class="fas fa-file-pdf"></i> Ver</a>
+                    <button class="btn sm ${agregado ? '' : 'ghost'}" onclick="toggleLibro(${l.id})">
+                        <i class="fas fa-${agregado ? 'check' : 'plus'}"></i> ${agregado ? 'En Mis Cursos' : 'A Mis Cursos'}
+                    </button>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    });
+    box.innerHTML = html;
+}
+
+async function toggleLibro(id){
+    const agregado = misIds.has(String(id));
+    if(agregado && !confirm('¿Quitar este libro de Mis Cursos?')) return;
+    const fd = new FormData(); fd.append('curso_id', id);
+    try{
+        const res = await fetch(BASE+'BibliotecaEstudianteController.php?accion='+(agregado?'quitar':'agregar'),{method:'POST',body:fd});
+        const d = await res.json();
+        if(d.ok){
+            if(agregado) misIds.delete(String(id)); else misIds.add(String(id));
+            actualizarChipMis();
+            render();
+        } else {
+            alert('⚠️ ' + (d.msg || 'El servidor respondió un error'));
+        }
+    }catch(e){
+        alert('⚠️ Error de conexión: revisa que exista backend/controllers/BibliotecaEstudianteController.php');
+    }
+}
+</script>
+</body>
+</html>

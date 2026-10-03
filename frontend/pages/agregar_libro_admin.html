@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agregar Libro | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="../css/panel.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz Admin</span></div>
+    <a href="dashboard_admin.html"><i class="fas fa-home"></i><span>Inicio</span></a>
+    <a href="cursos_admin.html"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html" class="on"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="estudiantes_admin.html"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="monitoreo_admin.html"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html"><i class="fas fa-user-shield"></i><span>Mi Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Agregar Nuevo Libro <span class="ia-context-badge"><i class="fas fa-check-circle"></i> IA Activa</span></h1>
+    </div>
+
+    <div class="card">
+        <h3><i class="fas fa-user"></i> Admin</h3>
+        <form id="formLibro">
+            <div class="f">
+                <label><i class="fas fa-info-circle"></i> Información del Libro</label>
+            </div>
+            <div class="f">
+                <label>Título del libro *</label>
+                <input type="text" id="libroTitulo" required>
+            </div>
+            <div class="f">
+                <label>Autor *</label>
+                <input type="text" id="libroAutor" required>
+            </div>
+            <div class="f">
+                <label>Categoría</label>
+                <select id="libroCategoria">
+                    <option value="">Seleccionar categoría...</option>
+                </select>
+            </div>
+            <div class="f">
+                <label>Nivel</label>
+                <select id="libroNivel">
+                    <option value="">Seleccionar nivel...</option>
+                </select>
+            </div>
+            <div class="f">
+                <label>Descripción</label>
+                <textarea id="libroDescripcion"></textarea>
+            </div>
+            <div class="f">
+                <label>Portada (URL de imagen)</label>
+                <input type="url" id="libroPortada" placeholder="Pega el enlace directo a la imagen de la portada.">
+            </div>
+            <div class="f">
+                <label>Archivo PDF del Libro *</label>
+                <div class="file-drop" id="fileDrop">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p class="file-text">Haz clic o arrastra el archivo PDF aquí</p>
+                    <p class="file-text" style="font-size:0.8rem;">Formato permitido: .PDF (Máximo 50MB)</p>
+                    <p class="file-name" id="fileName">nombre_del_archivo.pdf</p>
+                    <p class="file-text" id="fileSize">0 KB</p>
+                    <input type="file" id="libroPDF" accept=".pdf" onchange="handleFile(this)">
+                    <button type="button" class="file-remove" onclick="removeFile()"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn"><i class="fas fa-save"></i> Guardar Libro</button>
+                <button type="button" class="btn gh" onclick="limpiarFormulario()"><i class="fas fa-eraser"></i> Limpiar Formulario</button>
+            </div>
+        </form>
+    </div>
+</main>
+</div>
+
+<!-- Widget IA Flotante -->
+<button class="ia-toggle-btn" onclick="toggleIAChat()" title="Asistente IA">
+    <i class="fas fa-robot"></i>
+</button>
+
+<div class="ia-chat-widget" id="iaChatWidget">
+    <div class="ia-chat-header">
+        <h3><i class="fas fa-robot"></i> DEVIOZ AI <span class="ia-context-badge" id="iaContextBadge">Activo</span></h3>
+        <button class="ia-chat-close" onclick="toggleIAChat()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="ia-chat-messages" id="iaChatMessages">
+        <div class="chat-msg ia" style="max-width: 100%;">
+            <div class="chat-msg-avatar"><i class="fas fa-robot"></i></div>
+            <div class="chat-msg-content">
+                <strong>DEVIOZ AI</strong>
+                <p style="font-size: 0.9rem;">¡Hola! Soy tu asistente inteligente.<br><br>
+                <strong>En este módulo puedo ayudarte a:</strong><br>
+                <span id="iaContexto" style="color: var(--mu);">Subir libros, gestionar PDFs, organizar material educativo</span><br><br>
+                <em style="font-size: 0.85rem;">¿En qué puedo ayudarte?</em></p>
+            </div>
+        </div>
+    </div>
+    <div class="ia-chat-input">
+        <input type="text" id="iaChatInput" placeholder="Escribe tu consulta...">
+        <button onclick="sendIAChat()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<script>
+const IA_BASE = '/lms_prepa/backend/controllers/';
+let iaChatOpen = false;
+
+const contextosPorModulo = {
+    'dashboard': 'Ver estadísticas, crear reportes, analizar datos del sistema',
+    'estudiantes': 'Crear estudiantes, asignar cursos, gestionar notas, ver progreso',
+    'cursos': 'Crear cursos, módulos, asignar profesores, subir material',
+    'biblioteca': 'Subir libros, gestionar PDFs, organizar material educativo',
+    'universidades': 'Configurar universidades, carreras, sedes, convenios',
+    'monitoreo': 'Ver avances de estudiantes, estadísticas de rendimiento, alertas',
+    'perfil': 'Actualizar datos personales, cambiar contraseña, configuración'
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    detectarModuloActual();
+    document.getElementById('iaChatInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') sendIAChat();
+    });
+});
+
+function detectarModuloActual() {
+    var path = window.location.pathname;
+    var modulo = 'default';
+    if (path.includes('dashboard')) modulo = 'dashboard';
+    else if (path.includes('estudiantes')) modulo = 'estudiantes';
+    else if (path.includes('cursos')) modulo = 'cursos';
+    else if (path.includes('biblioteca')) modulo = 'biblioteca';
+    else if (path.includes('universidades')) modulo = 'universidades';
+    else if (path.includes('monitoreo')) modulo = 'monitoreo';
+    else if (path.includes('perfil')) modulo = 'perfil';
+    
+    var contextoEl = document.getElementById('iaContexto');
+    var badgeEl = document.getElementById('iaContextBadge');
+    if (contextoEl && contextosPorModulo[modulo]) contextoEl.textContent = contextosPorModulo[modulo];
+    if (badgeEl) {
+        var nombreModulo = modulo.charAt(0).toUpperCase() + modulo.slice(1);
+        badgeEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + nombreModulo;
+    }
+}
+
+function toggleIAChat() {
+    var widget = document.getElementById('iaChatWidget');
+    var btn = document.querySelector('.ia-toggle-btn');
+    iaChatOpen = !iaChatOpen;
+    if (iaChatOpen) {
+        widget.classList.add('active');
+        btn.style.animation = 'none';
+        setTimeout(function() { document.getElementById('iaChatInput').focus(); }, 300);
+    } else {
+        widget.classList.remove('active');
+        btn.style.animation = 'bounce 2s infinite';
+    }
+}
+
+async function sendIAChat() {
+    var input = document.getElementById('iaChatInput');
+    var mensaje = input.value.trim();
+    if (!mensaje) return;
+    agregarIAMensaje('user', mensaje);
+    input.value = '';
+    var loadingId = agregarIAMensaje('ia', '<i class="fas fa-spinner fa-spin"></i> Procesando...');
+    try {
+        var formData = new FormData();
+        formData.append('mensaje', mensaje);
+        formData.append('admin_id', 1);
+        var res = await fetch(IA_BASE + 'IAController.php?accion=chatLibre', { method: 'POST', body: formData });
+        var data = await res.json();
+        var loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+        if (data.ok) {
+            agregarIAMensaje('ia', data.respuesta);
+            if (data.tiene_accion && data.accion) setTimeout(function() { ejecutarAccionIA(data.accion); }, 500);
+        } else {
+            agregarIAMensaje('ia', '❌ ' + data.msg);
+        }
+    } catch (error) {
+        var loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+        agregarIAMensaje('ia', '❌ Error: ' + error.message);
+    }
+}
+
+function agregarIAMensaje(tipo, contenido) {
+    var container = document.getElementById('iaChatMessages');
+    var msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg ' + tipo;
+    msgDiv.id = 'ia-msg-' + Date.now();
+    msgDiv.style.maxWidth = '100%';
+    if (tipo === 'ia') {
+        msgDiv.innerHTML = '<div class="chat-msg-avatar"><i class="fas fa-robot"></i></div><div class="chat-msg-content"><strong>DEVIOZ AI</strong><p style="font-size: 0.9rem;">' + contenido + '</p></div>';
+    } else {
+        msgDiv.innerHTML = '<div class="chat-msg-content" style="background: var(--glow); color: #000;"><strong>Tú</strong><p style="font-size: 0.9rem;">' + contenido + '</p></div><div class="chat-msg-avatar user" style="background: rgba(0,255,136,0.2); border-color: var(--success); color: var(--success);"><i class="fas fa-user"></i></div>';
+    }
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+    return msgDiv.id;
+}
+
+async function ejecutarAccionIA(accion) {
+    var loadingId = agregarIAMensaje('ia', '<i class="fas fa-cogs fa-spin"></i> Ejecutando...');
+    try {
+        var formData = new FormData();
+        formData.append('accion', JSON.stringify(accion));
+        formData.append('admin_id', 1);
+        var res = await fetch(IA_BASE + 'IAController.php?accion=ejecutarAccion', { method: 'POST', body: formData });
+        var data = await res.json();
+        var loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+        if (data.ok) {
+            agregarIAMensaje('ia', '✅ ' + data.msg);
+            setTimeout(function() { location.reload(); }, 2000);
+        } else {
+            agregarIAMensaje('ia', '❌ ' + data.msg);
+        }
+    } catch (error) {
+        var loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+        agregarIAMensaje('ia', '❌ Error: ' + error.message);
+    }
+}
+
+function handleFile(input) {
+    if (input.files && input.files[0]) {
+        var file = input.files[0];
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(2) + ' KB';
+        document.getElementById('fileDrop').classList.add('has-file');
+    }
+}
+
+function removeFile() {
+    document.getElementById('libroPDF').value = '';
+    document.getElementById('fileName').textContent = 'nombre_del_archivo.pdf';
+    document.getElementById('fileSize').textContent = '0 KB';
+    document.getElementById('fileDrop').classList.remove('has-file');
+}
+
+function limpiarFormulario() {
+    document.getElementById('formLibro').reset();
+    removeFile();
+}
+</script>
+</body>
+</html>

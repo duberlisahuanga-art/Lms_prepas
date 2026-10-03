@@ -1,0 +1,16 @@
+vendor/
+node_modules/
+
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store
+Thumbs.db
+
+.vscode/
+.idea/
+
+backend/config/llama_free.php
+backend/config/gemini_free.php

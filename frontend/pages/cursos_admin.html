@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cursos | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <a href="dashboard_admin.html"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="estudiantes_admin.html"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="cursos_admin.html" class="on"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="monitoreo_admin.html"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html"><i class="fas fa-user-shield"></i><span>Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Gestión de <span>Cursos</span></h1>
+        <button class="btn" onclick="abrirModal()"><i class="fas fa-plus"></i> Nuevo Curso</button>
+    </div>
+
+    <div class="card">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:18px;">
+            <div class="search-box" style="flex:1;min-width:220px;margin-bottom:0;">
+                <input type="text" id="buscar" placeholder="Buscar curso...">
+            </div>
+            <select id="filtroCategoria" class="f" style="margin:0;padding:10px 14px;background:rgba(8,4,20,.7);border:1px solid var(--border);border-radius:12px;color:var(--tx);font-family:inherit;">
+                <option value="">Todas las categorías</option>
+            </select>
+        </div>
+        <div id="listaCursos"><p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando cursos...</p></div>
+    </div>
+</main>
+</div>
+
+<!-- MODAL CREAR / EDITAR CURSO -->
+<div class="modal" id="modalCurso">
+    <div class="mbox" style="max-width:680px;">
+        <button class="modal-close" onclick="cerrarModal()"><i class="fas fa-times"></i></button>
+        <h3 id="tituloModal"><i class="fas fa-book-open" style="color:var(--cy);"></i> Nuevo curso</h3>
+        <form id="formCurso">
+            <input type="hidden" id="cursoId">
+            
+            <div class="f">
+                <label><i class="fas fa-heading"></i> Nombre del curso *</label>
+                <input type="text" id="nombre" required placeholder="Ej: Álgebra básica">
+            </div>
+            
+            <div class="f">
+                <label><i class="fas fa-align-left"></i> Descripción</label>
+                <textarea id="descripcion" rows="3" placeholder="Descripción breve del curso..."></textarea>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="f">
+                    <label><i class="fas fa-university"></i> Universidad</label>
+                    <select id="universidad_id"><option value="">Sin asignar</option></select>
+                </div>
+                <div class="f">
+                    <label><i class="fas fa-tags"></i> Categoría</label>
+                    <select id="categoria_id"><option value="">Sin categoría</option></select>
+                </div>
+                <div class="f">
+                    <label><i class="fas fa-layer-group"></i> Nivel</label>
+                    <select id="nivel_id"><option value="">Sin nivel</option></select>
+                </div>
+                <div class="f">
+                    <label><i class="fas fa-calendar-alt"></i> Ciclo</label>
+                    <select id="ciclo_id"><option value="">Sin ciclo</option></select>
+                </div>
+            </div>
+            
+            <div class="f">
+                <label><i class="fas fa-file-pdf"></i> PDF del curso</label>
+                <div class="file-drop" id="fileDrop">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <div class="file-text">Arrastra un PDF o haz clic para seleccionar</div>
+                    <div class="file-name" id="fileName"></div>
+                    <input type="file" id="archivo" accept="application/pdf">
+                    <button type="button" class="file-remove" onclick="removerArchivo(event)"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn" id="btnGuardar"><i class="fas fa-save"></i> Guardar</button>
+                <button type="button" class="btn gh" onclick="cerrarModal()"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let cursos = [];
+let universidades = [];
+let categorias = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('out').onclick = function(e) {
+        e.preventDefault();
+        if (confirm('¿Cerrar sesión?')) {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+    };
+    
+    const mb = document.querySelector('.mb');
+    if (mb) mb.onclick = () => document.querySelector('.sb').classList.toggle('open');
+    
+    document.getElementById('formCurso').onsubmit = guardarCurso;
+    document.getElementById('buscar').oninput = renderCursos;
+    document.getElementById('filtroCategoria').onchange = renderCursos;
+    
+    // File drop
+    const fileDrop = document.getElementById('fileDrop');
+    const fileInput = document.getElementById('archivo');
+    fileDrop.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => mostrarArchivo(e.target.files[0]);
+    fileDrop.ondragover = (e) => { e.preventDefault(); fileDrop.classList.add('drag'); };
+    fileDrop.ondragleave = () => fileDrop.classList.remove('drag');
+    fileDrop.ondrop = (e) => {
+        e.preventDefault();
+        fileDrop.classList.remove('drag');
+        if (e.dataTransfer.files[0]) {
+            fileInput.files = e.dataTransfer.files;
+            mostrarArchivo(e.dataTransfer.files[0]);
+        }
+    };
+    
+    cargarTodo();
+    
+    // Verificar si viene con ?edit=ID en la URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('edit')) setTimeout(() => editarCurso(parseInt(params.get('edit'))), 500);
+});
+
+async function cargarTodo() {
+    await Promise.all([cargarCursos(), cargarCatalogos()]);
+}
+
+async function cargarCursos() {
+    try {
+        const res = await fetch(BASE + 'CursoController.php?accion=listar');
+        const data = await res.json();
+        if (data.ok) {
+            cursos = data.data || [];
+            renderCursos();
+        }
+    } catch (e) {
+        document.getElementById('listaCursos').innerHTML = '<p class="empty" style="color:var(--er);">Error al cargar cursos</p>';
+    }
+}
+
+async function cargarCatalogos() {
+    try {
+        const [u, cat, niv, cic] = await Promise.all([
+            fetch(BASE + 'UniversidadController.php?accion=listar').then(r => r.json()),
+            fetch(BASE + 'AcademicoController.php?accion=listar&tipo=categoria').then(r => r.json()),
+            fetch(BASE + 'AcademicoController.php?accion=listar&tipo=nivel').then(r => r.json()),
+            fetch(BASE + 'AcademicoController.php?accion=listar&tipo=ciclo').then(r => r.json())
+        ]);
+        
+        universidades = (u.ok ? u.data : []) || [];
+        categorias = (cat.ok ? cat.data : []) || [];
+        const niveles = (niv.ok ? niv.data : []) || [];
+        const ciclos = (cic.ok ? cic.data : []) || [];
+        
+        llenarSelect('universidad_id', universidades);
+        llenarSelect('categoria_id', categorias);
+        llenarSelect('nivel_id', niveles);
+        llenarSelect('ciclo_id', ciclos);
+        
+        // Filtro de categoría en la tabla
+        const filtroCat = document.getElementById('filtroCategoria');
+        filtroCat.innerHTML = '<option value="">Todas las categorías</option>';
+        categorias.forEach(c => {
+            filtroCat.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+        });
+    } catch (e) {
+        console.error('Error cargando catálogos:', e);
+    }
+}
+
+function llenarSelect(id, items) {
+    const sel = document.getElementById(id);
+    const primer = sel.options[0].outerHTML;
+    sel.innerHTML = primer;
+    items.forEach(i => {
+        sel.innerHTML += `<option value="${i.id}">${i.nombre}</option>`;
+    });
+}
+
+function renderCursos() {
+    const box = document.getElementById('listaCursos');
+    const buscar = document.getElementById('buscar').value.toLowerCase();
+    const filtroCat = document.getElementById('filtroCategoria').value;
+    
+    let lista = cursos.filter(c => {
+        const matchBusq = !buscar || c.nombre.toLowerCase().includes(buscar) || 
+                         (c.universidad_nombre || '').toLowerCase().includes(buscar);
+        const matchCat = !filtroCat || c.categoria_id == filtroCat;
+        return matchBusq && matchCat;
+    });
+    
+    if (!lista.length) {
+        box.innerHTML = '<p class="empty"><i class="fas fa-book-open"></i> No hay cursos. Crea el primero.</p>';
+        return;
+    }
+    
+    let html = `<table>
+        <thead>
+            <tr>
+                <th>Curso</th>
+                <th>Categoría</th>
+                <th>Universidad</th>
+                <th>Nivel</th>
+                <th>PDF</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    
+    lista.forEach(c => {
+        const pdfCell = c.pdf_url 
+            ? `<a href="/lms_prepa/${c.pdf_url}" target="_blank" class="btn sm btn-view"><i class="fas fa-file-pdf"></i> Ver</a>`
+            : '<span style="color:var(--mu);font-size:.8rem;">—</span>';
+        
+        html += `<tr>
+            <td>
+                <strong style="color:var(--tx);">${c.nombre}</strong>
+                ${c.descripcion ? `<br><small style="color:var(--mu);">${c.descripcion.substring(0, 60)}${c.descripcion.length > 60 ? '...' : ''}</small>` : ''}
+            </td>
+            <td>${c.categoria_nombre ? `<span class="badge">${c.categoria_nombre}</span>` : '<span style="color:var(--mu);">—</span>'}</td>
+            <td>${c.universidad_nombre || '<span style="color:var(--mu);">—</span>'}</td>
+            <td>${c.nivel_nombre || '<span style="color:var(--mu);">—</span>'}</td>
+            <td>${pdfCell}</td>
+            <td>
+                <button class="btn sm gh" onclick="editarCurso(${c.id})"><i class="fas fa-pen"></i></button>
+                <button class="btn sm dg" onclick="eliminarCurso(${c.id}, '${c.nombre.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    box.innerHTML = html;
+}
+
+function abrirModal() {
+    document.getElementById('tituloModal').innerHTML = '<i class="fas fa-book-open" style="color:var(--cy);"></i> Nuevo curso';
+    document.getElementById('formCurso').reset();
+    document.getElementById('cursoId').value = '';
+    document.getElementById('fileName').textContent = '';
+    document.getElementById('fileDrop').classList.remove('has-file');
+    document.getElementById('btnGuardar').innerHTML = '<i class="fas fa-save"></i> Guardar';
+    document.getElementById('modalCurso').classList.add('open');
+    setTimeout(() => document.getElementById('nombre').focus(), 200);
+}
+
+function editarCurso(id) {
+    const c = cursos.find(x => x.id == id);
+    if (!c) return;
+    
+    document.getElementById('tituloModal').innerHTML = '<i class="fas fa-pen" style="color:var(--cy);"></i> Editar curso';
+    document.getElementById('cursoId').value = c.id;
+    document.getElementById('nombre').value = c.nombre || '';
+    document.getElementById('descripcion').value = c.descripcion || '';
+    document.getElementById('universidad_id').value = c.universidad_id || '';
+    document.getElementById('categoria_id').value = c.categoria_id || '';
+    document.getElementById('nivel_id').value = c.nivel_id || '';
+    document.getElementById('ciclo_id').value = c.ciclo_id || '';
+    document.getElementById('fileName').textContent = c.pdf_url ? 'PDF actual: ' + c.pdf_url.split('/').pop() : '';
+    if (c.pdf_url) document.getElementById('fileDrop').classList.add('has-file');
+    
+    document.getElementById('btnGuardar').innerHTML = '<i class="fas fa-save"></i> Actualizar';
+    document.getElementById('modalCurso').classList.add('open');
+}
+
+function cerrarModal() {
+    document.getElementById('modalCurso').classList.remove('open');
+}
+
+function mostrarArchivo(file) {
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+        alert('Solo se permiten archivos PDF');
+        return;
+    }
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileDrop').classList.add('has-file');
+}
+
+function removerArchivo(e) {
+    e.stopPropagation();
+    document.getElementById('archivo').value = '';
+    document.getElementById('fileName').textContent = '';
+    document.getElementById('fileDrop').classList.remove('has-file');
+}
+
+async function guardarCurso(e) {
+    e.preventDefault();
+    const id = document.getElementById('cursoId').value;
+    const btn = document.getElementById('btnGuardar');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    
+    const fd = new FormData();
+    fd.append('accion', id ? 'actualizar' : 'crear');
+    if (id) fd.append('id', id);
+    fd.append('nombre', document.getElementById('nombre').value.trim());
+    fd.append('descripcion', document.getElementById('descripcion').value.trim());
+    fd.append('universidad_id', document.getElementById('universidad_id').value);
+    fd.append('categoria_id', document.getElementById('categoria_id').value);
+    fd.append('nivel_id', document.getElementById('nivel_id').value);
+    fd.append('ciclo_id', document.getElementById('ciclo_id').value);
+    
+    const archivo = document.getElementById('archivo').files[0];
+    if (archivo) fd.append('archivo', archivo);
+    
+    try {
+        const res = await fetch(BASE + 'CursoController.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        
+        if (data.ok) {
+            alert('✅ ' + data.msg);
+            cerrarModal();
+            cargarCursos();
+        } else {
+            alert('⚠️ ' + data.msg);
+        }
+    } catch (err) {
+        alert('Error de conexión');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+}
+
+async function eliminarCurso(id, nombre) {
+    if (!confirm(`¿Eliminar el curso "${nombre}"?\nSe borrará también el PDF asociado.`)) return;
+    
+    const fd = new FormData();
+    fd.append('accion', 'eliminar');
+    fd.append('id', id);
+    
+    try {
+        const res = await fetch(BASE + 'CursoController.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        
+        if (data.ok) {
+            alert('✅ ' + data.msg);
+            cargarCursos();
+        } else {
+            alert('⚠️ ' + data.msg);
+        }
+    } catch (e) {
+        alert('Error de conexión');
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Página no encontrada | Devioz Academy</title>
+    <link rel="stylesheet" href="../css/landing.css">
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .error-box {
+            max-width: 500px;
+        }
+        .error-code {
+            font-size: 8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--devioz-accent), var(--devioz-cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        .error-box h1 {
+            font-size: 2rem;
+            color: var(--devioz-dark);
+            margin-bottom: 15px;
+        }
+        .error-box p {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="water-bg"></div>
+    <div class="error-container">
+        <div class="error-box glass-card" style="padding: 60px 40px;">
+            <div class="error-code">404</div>
+            <h1>Página no encontrada</h1>
+            <p>Lo sentimos, la página que buscas no existe o fue movida.</p>
+            <a href="index.html" class="btn-devioz">
+                <i class="fas fa-home"></i> Volver al inicio
+            </a>
+        </div>
+    </div>
+    <script src="../js/theme.js"></script>
+</body>
+</html>

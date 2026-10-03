@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Admin | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <a href="dashboard_admin.html" class="on"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="estudiantes_admin.html"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="cursos_admin.html"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="monitoreo_admin.html"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html"><i class="fas fa-user-shield"></i><span>Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Dashboard <span>Admin</span></h1>
+        <span class="mono-clock" id="reloj">--:--:--</span>
+    </div>
+
+    <div class="dash-grid">
+        <div class="mpanel mhead dhead">
+            <div class="mhead-item"><span class="mlabel">ESTADO</span><span class="mval ok">● OPERATIVO</span></div>
+            <div class="mhead-item"><span class="mlabel">SESIÓN</span><span class="mval">ADMIN</span></div>
+            <div class="mhead-item"><span class="mlabel">CUENTAS TOTALES</span><span class="mval" id="h-cuentas">0</span></div>
+            <div class="mhead-item"><span class="mlabel">ÚLTIMA SYNC</span><span class="mval cyan" id="h-sync">--:--:--</span></div>
+        </div>
+
+        <div class="dstats">
+            <div class="mpanel dstat"><i class="fas fa-book-open"></i><h2 id="stat-cur">0</h2><p>Cursos publicados</p></div>
+            <div class="mpanel dstat"><i class="fas fa-book"></i><h2 id="stat-lib">0</h2><p>Libros en biblioteca</p></div>
+            <div class="mpanel dstat"><i class="fas fa-university"></i><h2 id="stat-uni">0</h2><p>Universidades</p></div>
+            <div class="mpanel dstat"><i class="fas fa-file-pdf"></i><h2 id="stat-bol">0</h2><p>Boletines</p></div>
+        </div>
+
+        <div class="mpanel dlist">
+            <div class="mpanel-title"><i class="fas fa-clock-rotate-left"></i> Últimos cursos publicados</div>
+            <div id="lista-cursos"><div class="row"><span><i class="fas fa-circle-notch fa-spin"></i> Cargando…</span></div></div>
+        </div>
+
+        <div class="mpanel dacts">
+            <div class="mpanel-title"><i class="fas fa-bolt"></i> Acciones directas</div>
+            <a class="btn" href="cursos_admin.html?nuevo=1"><i class="fas fa-book"></i> Agregar libro / material</a>
+            <a class="btn gh" href="universidades_admin.html#investigar"><i class="fas fa-robot"></i> Investigar con IA</a>
+        </div>
+    </div>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+
+document.addEventListener('DOMContentLoaded', function(){
+    var logoutBtn = document.getElementById('out');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                localStorage.clear(); sessionStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
+    }
+    var mb = document.querySelector('.mb');
+    if (mb) mb.addEventListener('click', function(){ document.querySelector('.sb').classList.toggle('open'); });
+
+    recalcular();
+    setInterval(recalcular, 30000);
+    setInterval(function(){ document.getElementById('reloj').textContent = new Date().toLocaleTimeString('es-PE'); }, 1000);
+});
+
+async function recalcular(){
+    const [u, c, l, un, b] = await Promise.allSettled([
+        fetch(BASE + 'UsuarioController.php?accion=listar').then(r => r.json()),
+        fetch(BASE + 'CursoController.php?accion=listar').then(r => r.json()),
+        fetch(BASE + 'LibroController.php?accion=contar').then(r => r.json()),
+        fetch(BASE + 'UniversidadController.php?accion=listar').then(r => r.json()),
+        fetch(BASE + 'BoletinController.php?accion=contar').then(r => r.json()).catch(() => null)
+    ]);
+    const usuarios = (u.status === 'fulfilled' && u.value.ok) ? (u.value.data || []) : [];
+    const cursos   = (c.status === 'fulfilled' && c.value.ok) ? (c.value.data || []) : [];
+    const libros   = (l.status === 'fulfilled' && l.value.ok) ? (l.value.data?.total || 0) : 0;
+    const unis     = (un.status === 'fulfilled' && un.value.ok) ? (un.value.data || un.value.datos || []).length : 0;
+    const bolet    = (b.status === 'fulfilled' && b && b.value && b.value.ok) ? (b.value.data?.total || 0) : 0;
+
+    document.getElementById('stat-cur').textContent = cursos.length;
+    document.getElementById('stat-lib').textContent = libros;
+    document.getElementById('stat-uni').textContent = unis;
+    document.getElementById('stat-bol').textContent = bolet;
+    document.getElementById('h-cuentas').textContent = usuarios.length;
+
+    const box = document.getElementById('lista-cursos');
+    box.innerHTML = cursos.length
+        ? cursos.slice(0, 5).map(x => '<div class="row"><span><i class="fas fa-graduation-cap"></i>' + x.nombre + '</span><small>' + (x.universidad_nombre || 'General') + '</small></div>').join('')
+        : '<div class="row"><span><i class="fas fa-moon"></i> Aún no hay cursos publicados. Usa "Agregar libro / material".</span></div>';
+
+    document.getElementById('h-sync').textContent = new Date().toLocaleTimeString('es-PE');
+}
+</script>
+</body>
+</html>

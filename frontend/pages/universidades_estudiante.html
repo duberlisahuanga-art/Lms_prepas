@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universidades | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/estudiante.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <div class="nav-links" id="navLinks">
+        <a href="dashboard_estudiante.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="universidades_estudiante.html" class="on"><i class="fas fa-university"></i> Universidades</a>
+        <a href="biblioteca_estudiante.html"><i class="fas fa-book"></i> Biblioteca</a>
+        <a href="cursos_estudiante.html"><i class="fas fa-book-open"></i> Mis Cursos</a>
+        <a href="arcade_estudiante.html"><i class="fas fa-gamepad"></i> Arcade</a>
+        <a href="chat_ia.html" class="tutor"><i class="fas fa-robot"></i> Tutor IA</a>
+        <a href="perfil_estudiante.html"><i class="fas fa-user"></i> Mi Cuenta</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user"><div class="nav-avatar" id="navAvatar">E</div><span class="nav-name" id="navNombre">Estudiante</span></div>
+        <button class="nav-out" id="out" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+        <button class="nav-burger" onclick="document.getElementById('navLinks').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+    </div>
+</nav>
+
+<main class="main">
+    <section class="hero">
+        <h1>Universidades para tu futuro 🎓</h1>
+        <p>Elige tu universidad de preferencia para acceder a su biblioteca de libros, o explora los materiales de cualquier institución sin cambiar tu elección.</p>
+        <div class="hero-chips">
+            <span class="uni-chip" id="chipMiUni"><i class="fas fa-university"></i> Sin universidad elegida</span>
+            <span class="hero-chip" id="chipCount"><i class="fas fa-university"></i> 0 universidades</span>
+        </div>
+    </section>
+
+    <div class="grid-cards" id="lista">
+        <p class="empty"><i class="fas fa-spinner fa-spin"></i> Cargando universidades...</p>
+    </div>
+
+    <footer class="footer">Devioz Academy © 2025</footer>
+</main>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let miUniId = null, miUniNombre = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('out').onclick = () => { if(confirm('¿Cerrar sesión?')){ localStorage.clear(); sessionStorage.clear(); location.href='index.html'; } };
+    await cargarSesion();
+    await cargarPreferencia();
+    await cargar();
+});
+
+async function cargarSesion(){
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php?accion=mi_perfil')).json();
+        if(d.ok && d.data){
+            document.getElementById('navNombre').textContent = d.data.nombre;
+            document.getElementById('navAvatar').innerHTML = d.data.foto ? `<img src="${d.data.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : d.data.nombre.charAt(0).toUpperCase();
+        }
+    }catch(e){}
+}
+
+async function cargarPreferencia(){
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=preferencia')).json();
+        if(d.ok && d.data){
+            miUniId = d.data.universidad_id;
+            miUniNombre = d.data.universidad_nombre;
+        }
+    }catch(e){}
+    actualizarChip();
+}
+
+function actualizarChip(){
+    const chip = document.getElementById('chipMiUni');
+    if(miUniId && miUniNombre){
+        chip.className = 'uni-chip mia';
+        chip.innerHTML = `<i class="fas fa-star"></i> Tu universidad: ${miUniNombre}`;
+    } else {
+        chip.className = 'uni-chip';
+        chip.innerHTML = `<i class="fas fa-university"></i> Sin universidad elegida`;
+    }
+}
+
+async function cargar(){
+    const box = document.getElementById('lista');
+    try{
+        const d = await (await fetch(BASE+'UniversidadController.php?accion=listar')).json();
+        const unis = (d.ok ? d.data : []) || [];
+        document.getElementById('chipCount').innerHTML = `<i class="fas fa-university"></i> ${unis.length} universidades`;
+        if(!unis.length){
+            box.innerHTML = '<p class="empty"><i class="fas fa-university"></i> Aún no hay universidades registradas en la plataforma.</p>';
+            return;
+        }
+        box.innerHTML = unis.map(u => {
+            const mia = miUniId == u.id;
+            return `<div class="card-x">
+                <div class="cx-icon"><i class="fas fa-university"></i></div>
+                <h3>${u.nombre} ${mia ? '<span class="badge pdf">TU UNIVERSIDAD</span>' : ''}</h3>
+                <p>${u.ciudad ? '📍 '+u.ciudad+' · ' : ''}${u.tipo || 'nacional'}${u.pais ? ' · '+u.pais : ''}</p>
+                <div class="cc-actions">
+                    ${mia
+                        ? `<button class="btn sm coral" onclick="deselegir()"><i class="fas fa-times"></i> Elegida · quitar</button>`
+                        : `<button class="btn sm ghost" onclick="elegir(${u.id})"><i class="fas fa-star"></i> Elegir</button>`}
+                    <a class="btn sm ghost" href="biblioteca_estudiante.html?uni=${u.id}"><i class="fas fa-book"></i> Ver libros</a>
+                </div>
+            </div>`;
+        }).join('');
+    }catch(e){
+        box.innerHTML = '<p class="empty" style="color:var(--er);"><i class="fas fa-exclamation-triangle"></i> Error al cargar universidades</p>';
+    }
+}
+
+async function elegir(id){
+    const fd = new FormData(); fd.append('universidad_id', id);
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=guardar_preferencia',{method:'POST',body:fd})).json();
+        if(d.ok){ alert('✅ Universidad actualizada'); location.reload(); }
+        else alert('⚠️ ' + (d.msg || 'Error al guardar'));
+    }catch(e){ alert('Error de conexión'); }
+}
+
+async function deselegir(){
+    if(!confirm('¿Quitar tu universidad seleccionada?\nVerás toda la biblioteca y podrás elegir otra cuando quieras.')) return;
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=quitar_preferencia',{method:'POST'})).json();
+        if(d.ok){ location.reload(); }
+        else alert('⚠️ ' + (d.msg || 'Error al deselegir'));
+    }catch(e){ alert('Error de conexión'); }
+}
+</script>
+</body>
+</html>

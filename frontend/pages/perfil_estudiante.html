@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Cuenta | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/estudiante.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <div class="nav-links" id="navLinks">
+        <a href="dashboard_estudiante.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="universidades_estudiante.html"><i class="fas fa-university"></i> Universidades</a>
+        <a href="biblioteca_estudiante.html"><i class="fas fa-book"></i> Biblioteca</a>
+        <a href="cursos_estudiante.html"><i class="fas fa-book-open"></i> Mis Cursos</a>
+        <a href="arcade_estudiante.html"><i class="fas fa-gamepad"></i> Arcade</a>
+        <a href="chat_ia.html" class="tutor"><i class="fas fa-robot"></i> Tutor IA</a>
+        <a href="perfil_estudiante.html" class="on"><i class="fas fa-user"></i> Mi Cuenta</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user"><div class="nav-avatar" id="navAvatar">E</div><span class="nav-name" id="navNombre">Estudiante</span></div>
+        <button class="nav-out" id="out" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+        <button class="nav-burger" onclick="document.getElementById('navLinks').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+    </div>
+</nav>
+
+<main class="main">
+    <section class="profile-hero">
+        <div class="profile-avatar" id="avatarBox">
+            <span id="avatarLetra">E</span>
+            <img id="avatarImg" src="" alt="" style="display:none;">
+            <div class="cam-overlay"><i class="fas fa-camera"></i></div>
+        </div>
+        <div class="profile-info">
+            <h2 id="pNombre">Cargando...</h2>
+            <p id="pCorreo">—</p>
+            <span class="role-badge"><i class="fas fa-user-graduate"></i> Estudiante</span>
+        </div>
+        <div class="profile-actions">
+            <button class="btn sm" onclick="document.getElementById('fileFoto').click()"><i class="fas fa-upload"></i> Subir mi foto</button>
+            <button class="btn sm coral" onclick="quitarFoto()"><i class="fas fa-trash"></i> Quitar foto</button>
+            <small>JPG o PNG · máx. 2 MB</small>
+            <input type="file" id="fileFoto" accept="image/jpeg,image/png" style="display:none;">
+        </div>
+    </section>
+
+    <div class="profile-grid">
+        <div class="card-x">
+            <h3 style="color:var(--cy);"><i class="fas fa-id-card"></i> Mis datos</h3>
+            <div class="f"><label>Nombre completo</label><input type="text" id="dNombre" readonly></div>
+            <div class="f"><label>Correo electrónico</label><input type="email" id="dCorreo" readonly></div>
+            <div class="f"><label>Rol en la plataforma</label><input type="text" value="Estudiante" readonly></div>
+        </div>
+        <div class="card-x">
+            <h3 style="color:var(--cy);"><i class="fas fa-university"></i> Mi universidad</h3>
+            <div class="f"><label>Universidad de preferencia</label><input type="text" id="dUni" value="Sin elegir" readonly></div>
+            <p style="color:var(--mu);font-size:.85rem;margin-bottom:14px;">Tu universidad te da acceso a su biblioteca de libros, niveles y ciclos.</p>
+            <a class="btn sm" href="universidades_estudiante.html"><i class="fas fa-exchange-alt"></i> Cambiar universidad</a>
+        </div>
+    </div>
+
+    <div class="card-x" style="border-color:rgba(251,113,133,.35);">
+        <h3 style="color:var(--er);"><i class="fas fa-exclamation-triangle"></i> Zona de peligro</h3>
+        <p style="color:var(--mu);font-size:.9rem;margin-bottom:14px;">
+            Si desactivas tu cuenta, esta pasará a estado <strong style="color:var(--wa);">INACTIVO</strong>: no podrás iniciar sesión,
+            pero tus datos y avances se conservan. Podrás <strong style="color:var(--ok);">reactivarla</strong> registrándote de nuevo con tu mismo correo.
+        </p>
+        <button class="btn coral" onclick="abrirModalEliminar()"><i class="fas fa-user-times"></i> Desactivar mi cuenta</button>
+    </div>
+
+    <footer class="footer">Devioz Academy © 2025</footer>
+</main>
+
+<div class="modal" id="modalEliminar">
+    <div class="mbox">
+        <button class="modal-close" onclick="cerrarModalEliminar()"><i class="fas fa-times"></i></button>
+        <h3>Desactivar mi cuenta</h3>
+        <p style="color:var(--mu);font-size:.9rem;margin-bottom:16px;">Escribe tu contraseña para confirmar. Tu cuenta se <strong style="color:var(--wa);">desactivará</strong> (no se borra físicamente) y podrás reactivarla registrándote de nuevo con tu correo.</p>
+        <div class="f"><label><i class="fas fa-key"></i> Contraseña actual</label><input type="password" id="passEliminar"></div>
+        <div class="modal-actions">
+            <button class="btn ghost" onclick="cerrarModalEliminar()"><i class="fas fa-times"></i> Cancelar</button>
+            <button class="btn coral" id="btnEliminar" onclick="eliminarCuenta()"><i class="fas fa-user-times"></i> Desactivar mi cuenta</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('out').onclick = () => { if(confirm('¿Cerrar sesión?')){ localStorage.clear(); sessionStorage.clear(); location.href='index.html'; } };
+    document.getElementById('fileFoto').onchange = subirFoto;
+    await cargarPerfil();
+    await cargarPreferencia();
+});
+
+async function cargarPerfil(){
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php?accion=mi_perfil')).json();
+        if(d.ok && d.data){
+            const u = d.data;
+            document.getElementById('pNombre').textContent = u.nombre;
+            document.getElementById('pCorreo').textContent = u.correo || u.email || '—';
+            document.getElementById('dNombre').value = u.nombre;
+            document.getElementById('dCorreo').value = u.correo || u.email || '';
+            document.getElementById('navNombre').textContent = u.nombre;
+            if(u.foto){
+                document.getElementById('avatarImg').src = u.foto;
+                document.getElementById('avatarImg').style.display = 'block';
+                document.getElementById('avatarLetra').style.display = 'none';
+                document.getElementById('navAvatar').innerHTML = `<img src="${u.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            } else {
+                document.getElementById('avatarLetra').textContent = u.nombre.charAt(0).toUpperCase();
+                document.getElementById('navAvatar').textContent = u.nombre.charAt(0).toUpperCase();
+            }
+        }
+    }catch(e){ console.error(e); }
+}
+
+async function cargarPreferencia(){
+    try{
+        const d = await (await fetch(BASE+'BibliotecaEstudianteController.php?accion=preferencia')).json();
+        if(d.ok && d.data && d.data.universidad_nombre){
+            document.getElementById('dUni').value = d.data.universidad_nombre;
+        }
+    }catch(e){}
+}
+
+async function subirFoto(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 2*1024*1024){ alert('La imagen supera los 2 MB'); return; }
+    const fd = new FormData();
+    fd.append('accion','subir_foto');
+    fd.append('foto', file);
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php',{method:'POST',body:fd})).json();
+        if(d.ok){ alert('✅ Foto actualizada'); location.reload(); }
+        else alert('⚠️ ' + (d.msg || 'Error al subir'));
+    }catch(err){ alert('Error de conexión'); }
+}
+
+async function quitarFoto(){
+    if(!confirm('¿Quitar tu foto de perfil?')) return;
+    const fd = new FormData(); fd.append('accion','quitar_foto');
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php',{method:'POST',body:fd})).json();
+        if(d.ok){ location.reload(); } else alert('⚠️ ' + (d.msg || 'Error'));
+    }catch(e){ alert('Error de conexión'); }
+}
+
+function abrirModalEliminar(){ document.getElementById('modalEliminar').classList.add('open'); }
+function cerrarModalEliminar(){ document.getElementById('modalEliminar').classList.remove('open'); document.getElementById('passEliminar').value=''; }
+
+async function eliminarCuenta(){
+    const pass = document.getElementById('passEliminar').value;
+    if(!pass){ alert('Escribe tu contraseña'); return; }
+    const fd = new FormData();
+    fd.append('accion','eliminar_mi_cuenta');
+    fd.append('password', pass);
+    const btn = document.getElementById('btnEliminar');
+    btn.disabled = true;
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php',{method:'POST',body:fd})).json();
+        alert(d.ok ? '✅ ' + (d.msg || 'Cuenta desactivada. Podrás reactivarla registrándote de nuevo.') : '⚠️ ' + (d.msg || 'Error'));
+        if(d.ok){ localStorage.clear(); sessionStorage.clear(); location.href = 'index.html'; }
+    }catch(e){ alert('Error de conexión'); }
+    finally{ btn.disabled = false; }
+}
+</script>
+</body>
+</html>

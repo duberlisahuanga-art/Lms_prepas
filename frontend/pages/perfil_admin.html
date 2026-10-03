@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Perfil | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+<button class="mb"><i class="fas fa-bars"></i></button>
+<div class="panel">
+<aside class="sb">
+    <div class="brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <a href="dashboard_admin.html"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="estudiantes_admin.html"><i class="fas fa-users"></i><span>Estudiantes</span></a>
+    <a href="cursos_admin.html"><i class="fas fa-book-open"></i><span>Cursos</span></a>
+    <a href="biblioteca_admin.html"><i class="fas fa-book"></i><span>Biblioteca</span></a>
+    <a href="universidades_admin.html"><i class="fas fa-university"></i><span>Universidades</span></a>
+    <a href="monitoreo_admin.html"><i class="fas fa-chart-line"></i><span>Monitoreo</span></a>
+    <a href="perfil_admin.html" class="on"><i class="fas fa-user-shield"></i><span>Perfil</span></a>
+    <a href="#" id="out" class="out"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+</aside>
+<main class="mn">
+    <div class="tb">
+        <h1>Mi <span>Perfil</span></h1>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 340px 1fr; align-items: start;">
+        <!-- COLUMNA 1: IDENTIDAD -->
+        <div class="card">
+            <div class="profile-header" style="margin-bottom:0;">
+                <div class="profile-avatar" id="pAvatar" title="Haz clic para cambiar tu foto" onclick="document.getElementById('inputFoto').click()">
+                    <span>A</span>
+                    <span class="cam-overlay"><i class="fas fa-camera"></i></span>
+                </div>
+                <h2 class="profile-name" id="pNombre">Cargando...</h2>
+                <p class="profile-role"><span class="badge" id="pRol">Administrador</span></p>
+                <p class="profile-hint" id="pDesde">En la plataforma desde —</p>
+                <div class="profile-actions">
+                    <button class="btn sm" onclick="document.getElementById('inputFoto').click()"><i class="fas fa-camera"></i> Subir foto</button>
+                    <button class="btn sm dg" id="btnQuitar" style="display:none;" onclick="quitarFoto()"><i class="fas fa-trash"></i> Quitar</button>
+                </div>
+                <p class="profile-hint">JPG, PNG, WEBP o GIF · máx. 2 MB</p>
+                <input type="file" id="inputFoto" accept="image/*" style="display:none;" onchange="subirFoto(this)">
+            </div>
+        </div>
+
+        <!-- COLUMNA 2: CREDENCIALES + SEGURIDAD -->
+        <div>
+            <div class="card">
+                <h3><i class="fas fa-id-card"></i> Credenciales de acceso</h3>
+                <div class="profile-grid">
+                    <div class="f"><label><i class="fas fa-user"></i> Nombre visible</label><input type="text" id="inpNombre" placeholder="Tu nombre"></div>
+                    <div class="f"><label><i class="fas fa-envelope"></i> Correo de acceso</label><input type="email" id="inpCorreo" placeholder="tucorreo@devioz.com"></div>
+                </div>
+                <p class="profile-hint" style="text-align:left; margin:0 0 14px;">
+                    <i class="fas fa-circle-info" style="color:var(--cy);"></i>
+                    Estos datos se <strong>actualizan sobre tu cuenta actual</strong> (UPDATE). No se crea ningún usuario nuevo.
+                </p>
+                <div style="display:flex; justify-content:flex-end;">
+                    <button class="btn" onclick="guardarDatos()"><i class="fas fa-save"></i> Guardar cambios</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-shield-halved"></i> Seguridad de la cuenta</h3>
+                <p class="profile-hint" style="text-align:left; margin:0 0 16px;">
+                    <i class="fas fa-lock" style="color:var(--mg);"></i>
+                    Tu contraseña se guarda <strong>encriptada (hash bcrypt)</strong>: ni el sistema puede leerla, por eso no se muestra.
+                    Si la olvidaste, con tu sesión iniciada puedes <strong>establecer una nueva directamente</strong> sin necesidad de la anterior.
+                </p>
+                <div class="profile-grid">
+                    <div class="f">
+                        <label><i class="fas fa-key"></i> Nueva contraseña</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="password" id="inpPassNueva" placeholder="Mínimo 6 caracteres">
+                            <button class="btn sm gh" type="button" title="Ver/Ocultar" onclick="verPass('inpPassNueva', this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="f">
+                        <label><i class="fas fa-key"></i> Confirmar nueva contraseña</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="password" id="inpPassConf" placeholder="Repite la contraseña">
+                            <button class="btn sm gh" type="button" title="Ver/Ocultar" onclick="verPass('inpPassConf', this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:flex-end;">
+                    <button class="btn gh" onclick="restablecerPassword()"><i class="fas fa-rotate"></i> Establecer nueva contraseña</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+let yo = null;
+
+document.addEventListener('DOMContentLoaded', function(){
+    var logoutBtn = document.getElementById('out');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                localStorage.clear(); sessionStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
+    }
+    var mb = document.querySelector('.mb');
+    if (mb) mb.addEventListener('click', function(){ document.querySelector('.sb').classList.toggle('open'); });
+    cargarPerfil();
+});
+
+async function cargarPerfil(){
+    try {
+        const res = await fetch(BASE + 'UsuarioController.php?accion=mi_perfil');
+        const d = await res.json();
+        if (!d.ok) { alert(d.msg || 'No se pudo cargar tu perfil'); return; }
+        yo = d.data;
+        pintar();
+    } catch (e) { alert('Error de conexión al cargar el perfil'); }
+}
+
+function pintar(){
+    document.getElementById('pNombre').textContent = yo.nombre;
+    document.getElementById('pRol').textContent = yo.rol === 'admin' ? 'Administrador' : (yo.rol || 'Usuario');
+    document.getElementById('pDesde').textContent = 'En la plataforma desde ' + ((yo.fecha_registro || '').slice(0, 10) || '—');
+    document.getElementById('inpNombre').value = yo.nombre;
+    document.getElementById('inpCorreo').value = yo.correo;
+    const inicial = (yo.nombre || 'A').charAt(0).toUpperCase();
+    document.getElementById('pAvatar').innerHTML = yo.foto
+        ? '<img src="' + yo.foto + '" alt="foto"><span class="cam-overlay"><i class="fas fa-camera"></i></span>'
+        : '<span>' + inicial + '</span><span class="cam-overlay"><i class="fas fa-camera"></i></span>';
+    document.getElementById('btnQuitar').style.display = yo.foto ? 'inline-flex' : 'none';
+}
+
+function verPass(id, btn){
+    const inp = document.getElementById(id);
+    const ver = inp.type === 'password';
+    inp.type = ver ? 'text' : 'password';
+    btn.innerHTML = ver ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+}
+
+async function subirFoto(input){
+    if (!input.files || !input.files[0]) return;
+    const fd = new FormData();
+    fd.append('accion', 'subir_foto');
+    fd.append('foto', input.files[0]);
+    try {
+        const res = await fetch(BASE + 'UsuarioController.php', { method: 'POST', body: fd });
+        const d = await res.json();
+        if (d.ok) { yo.foto = d.data.foto; pintar(); alert(d.msg); }
+        else alert(d.msg);
+    } catch (e) { alert('Error al subir la foto'); }
+    finally { input.value = ''; }
+}
+
+async function quitarFoto(){
+    if (!confirm('¿Quitar tu foto de perfil? Volverás a mostrar tu inicial.')) return;
+    try {
+        const fd = new FormData();
+        fd.append('accion', 'eliminar_foto');
+        const res = await fetch(BASE + 'UsuarioController.php', { method: 'POST', body: fd });
+        const d = await res.json();
+        if (d.ok) { yo.foto = null; pintar(); alert(d.msg); }
+        else alert(d.msg);
+    } catch (e) { alert('Error al quitar la foto'); }
+}
+
+async function guardarDatos(){
+    const nombre = document.getElementById('inpNombre').value.trim();
+    const correo = document.getElementById('inpCorreo').value.trim();
+    if (nombre.length < 2) { alert('Escribe un nombre válido'); return; }
+    const fd = new FormData();
+    fd.append('accion', 'actualizar_mi_perfil');
+    fd.append('nombre', nombre);
+    fd.append('correo', correo);
+    try {
+        const res = await fetch(BASE + 'UsuarioController.php', { method: 'POST', body: fd });
+        const d = await res.json();
+        alert(d.msg);
+        if (d.ok) cargarPerfil();
+    } catch (e) { alert('Error al guardar'); }
+}
+
+async function restablecerPassword(){
+    const nueva = document.getElementById('inpPassNueva').value;
+    const conf  = document.getElementById('inpPassConf').value;
+    if (nueva.length < 6) { alert('La nueva contraseña debe tener al menos 6 caracteres'); return; }
+    if (nueva !== conf) { alert('La confirmación no coincide'); return; }
+    if (!confirm('Se establecerá esta como tu nueva contraseña de acceso. ¿Continuar?')) return;
+    const fd = new FormData();
+    fd.append('accion', 'restablecer_password');
+    fd.append('password_nueva', nueva);
+    fd.append('password_confirm', conf);
+    try {
+        const res = await fetch(BASE + 'UsuarioController.php', { method: 'POST', body: fd });
+        const d = await res.json();
+        alert(d.msg);
+        if (d.ok) {
+            document.getElementById('inpPassNueva').value = '';
+            document.getElementById('inpPassConf').value = '';
+        }
+    } catch (e) { alert('Error al restablecer'); }
+}
+</script>
+</body>
+</html>

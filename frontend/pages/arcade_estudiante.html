@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcade | Devioz Academy</title>
+<link rel="icon" type="image/png" href="../img/logo-devioz.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/estudiante.css">
+<style>
+    .rank-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:10px;font-weight:800;font-size:.8rem;font-family:'Space Grotesk';border:1px solid;}
+    .rank-bronze{color:#cd7f32;border-color:rgba(205,127,50,.4);background:rgba(205,127,50,.08);}
+    .rank-silver{color:#cbd5e1;border-color:rgba(203,213,225,.4);background:rgba(203,213,225,.08);}
+    .rank-gold{color:#facc15;border-color:rgba(250,204,21,.5);background:rgba(250,204,21,.1);}
+    .rank-plat{color:#22d9ff;border-color:rgba(34,217,255,.5);background:rgba(34,217,255,.1);}
+    .rank-dia{color:#a855f7;border-color:rgba(168,85,247,.5);background:rgba(168,85,247,.12);}
+    .rank-master{color:#e879f9;border-color:rgba(232,121,249,.6);background:rgba(232,121,249,.12);}
+    .rank-legend{color:#fff;border-color:rgba(251,146,60,.8);background:linear-gradient(135deg,rgba(251,146,60,.2),rgba(232,121,249,.2));box-shadow:0 0 18px rgba(251,146,60,.4);}
+    .player-card{display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+    .player-ava{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.6rem;background:radial-gradient(circle at 32% 30%, rgba(34,217,255,.45), rgba(168,85,247,.35) 55%, rgba(16,10,34,.95));border:2px solid var(--line-cy);box-shadow:0 0 26px rgba(34,217,255,.35);flex-shrink:0;}
+    .player-id{font-family:'Orbitron';font-size:1.35rem;color:#fff;letter-spacing:.5px;}
+    .xp-bar{height:10px;background:rgba(8,4,20,.8);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:8px;max-width:320px;}
+    .xp-fill{height:100%;background:linear-gradient(90deg,#22d9ff,#a855f7);border-radius:99px;transition:width .6s;}
+    .ava-grid,.col-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+    .ava-opt{width:46px;height:46px;border-radius:12px;border:2px solid var(--line);background:rgba(8,4,20,.7);font-size:1.45rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .ava-opt.sel{border-color:var(--cy);box-shadow:0 0 14px rgba(34,217,255,.45);transform:scale(1.1);}
+    .col-opt{width:46px;height:46px;border-radius:12px;border:2px solid rgba(255,255,255,.15);cursor:pointer;position:relative;transition:all .2s;}
+    .col-opt.sel{border-color:#fff;box-shadow:0 0 16px currentColor;transform:scale(1.1);}
+    .col-opt.sel::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;text-shadow:0 0 6px #000;}
+    #idStatus{font-size:.8rem;font-weight:700;margin-top:6px;min-height:18px;}
+    .preview-box{display:flex;align-items:center;gap:14px;margin:4px 0 16px;padding:12px 14px;background:rgba(8,4,20,.6);border:1px solid var(--line);border-radius:14px;}
+    .preview-ava{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.9rem;background:radial-gradient(circle at 32% 30%, rgba(34,217,255,.45), rgba(168,85,247,.35) 55%, rgba(16,10,34,.95));border:2px solid #22d9ff;flex-shrink:0;}
+    /* --- HUD de batalla --- */
+    .vs-row{display:flex;justify-content:space-between;align-items:center;font-size:2.6rem;margin-bottom:6px;}
+    .sprite{position:relative;display:inline-block;transition:transform .2s;}
+    .sprite.hit{animation:shakeX .45s;}
+    @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px) rotate(-8deg)}75%{transform:translateX(10px) rotate(8deg)}}
+    .card-juego.shake{animation:shakeX .35s;}
+    .hp-bar{height:16px;background:rgba(8,4,20,.85);border:1px solid var(--line);border-radius:99px;overflow:hidden;position:relative;margin-bottom:10px;}
+    .hp-ghost{position:absolute;inset:0;width:100%;background:rgba(255,255,255,.5);border-radius:99px;transition:width .9s ease .45s;z-index:1;}
+    .hp-fill{position:absolute;inset:0;width:100%;border-radius:99px;transition:width .25s ease;z-index:2;}
+    .hp-fill.jugador{background:linear-gradient(90deg,#34d399,#22d9ff);box-shadow:0 0 12px rgba(52,211,153,.6);}
+    .hp-fill.dragon{background:linear-gradient(90deg,#fb7185,#fb923c);box-shadow:0 0 12px rgba(251,113,133,.6);}
+    .hp-label{display:flex;justify-content:space-between;font-size:.78rem;font-weight:800;color:var(--mu);margin-bottom:4px;}
+    .timer-bar{height:6px;background:rgba(8,4,20,.8);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:8px 0 4px;}
+    .timer-fill{height:100%;background:linear-gradient(90deg,#34d399,#facc15,#fb7185);transition:width .1s linear;}
+    .spell{position:absolute;font-size:2rem;pointer-events:none;z-index:30;filter:drop-shadow(0 0 12px currentColor);}
+    .part{position:absolute;width:7px;height:7px;border-radius:50%;pointer-events:none;z-index:29;animation:partBurst .8s ease-out forwards;}
+    @keyframes partBurst{from{opacity:1;transform:translate(0,0) scale(1);}to{opacity:0;transform:translate(var(--px),var(--py)) scale(0);}}
+    .dmg-float{position:absolute;font-family:'Orbitron';font-weight:800;font-size:1.35rem;pointer-events:none;animation:floatUp .9s ease forwards;z-index:31;left:50%;top:-12px;}
+    @keyframes floatUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-50px)}}
+    .flash{position:fixed;inset:0;pointer-events:none;z-index:60;opacity:0;}
+    .flash.on{animation:flashAnim .55s;}
+    @keyframes flashAnim{0%{opacity:.5;}100%{opacity:0;}}
+    .shield-orbit{position:absolute;top:50%;left:50%;font-size:1.15rem;animation:orbit 2.4s linear infinite;}
+    @keyframes orbit{from{transform:rotate(0deg) translateX(36px) rotate(0deg);}to{transform:rotate(360deg) translateX(36px) rotate(-360deg);}}
+    .opciones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+    .opcion{padding:14px 16px;background:rgba(8,4,20,.7);border:1px solid var(--line);border-radius:12px;color:var(--ink);font-family:inherit;font-size:.95rem;font-weight:600;cursor:pointer;text-align:left;transition:all .2s;display:flex;gap:10px;align-items:center;}
+    .opcion:hover:not(:disabled){border-color:var(--cy);background:rgba(34,217,255,.08);transform:translateY(-2px);}
+    .opcion .letra{width:28px;height:28px;border-radius:8px;background:rgba(34,217,255,.12);color:var(--cy);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;}
+    .opcion.ok{border-color:var(--ok);background:rgba(52,211,153,.18);}
+    .opcion.mal{border-color:var(--er);background:rgba(251,113,133,.18);}
+    .opcion:disabled{cursor:not-allowed;opacity:.9;}
+    #feedback{min-height:20px;margin-top:12px;padding:12px 16px;border-radius:12px;font-weight:600;display:none;font-size:.9rem;line-height:1.6;}
+    #feedback.ok{display:block;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.4);color:var(--ok);}
+    #feedback.mal{display:block;background:rgba(251,113,133,.08);border:1px solid rgba(251,113,133,.4);color:var(--ink);}
+    #feedback .expl{display:block;margin-top:6px;color:var(--mu);font-size:.85rem;}
+    .stars{font-size:2.4rem;letter-spacing:8px;margin:4px 0 10px;}
+    .star-off{opacity:.22;filter:grayscale(1);}
+    .fallo-item{background:rgba(251,113,133,.06);border-left:3px solid var(--er);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:.88rem;text-align:left;}
+    .fallo-item b{color:var(--er);} .fallo-item .ok-txt{color:var(--ok);font-weight:700;}
+    .rank-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px dashed rgba(168,85,247,.2);font-size:.88rem;}
+    .rank-row:last-child{border-bottom:none;}
+    .rank-pos{width:26px;height:26px;border-radius:50%;background:rgba(34,217,255,.12);color:var(--cy);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.76rem;flex-shrink:0;}
+    .como-jugar{color:var(--mu);font-size:.88rem;line-height:1.9;margin:8px 0 0 18px;}
+    .como-jugar li{margin-bottom:2px;}
+    @media(max-width:640px){.opciones{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="flash" id="flashOverlay"></div>
+<nav class="navbar">
+    <div class="nav-brand"><img src="../img/logo-devioz.png" alt="Devioz"><span>Devioz <em>Academy</em></span></div>
+    <div class="nav-links" id="navLinks">
+        <a href="dashboard_estudiante.html"><i class="fas fa-home"></i> Inicio</a>
+        <a href="universidades_estudiante.html"><i class="fas fa-university"></i> Universidades</a>
+        <a href="biblioteca_estudiante.html"><i class="fas fa-book"></i> Biblioteca</a>
+        <a href="cursos_estudiante.html"><i class="fas fa-book-open"></i> Mis Cursos</a>
+        <a href="arcade_estudiante.html" class="on"><i class="fas fa-gamepad"></i> Arcade</a>
+        <a href="amigos_arcade.html"><i class="fas fa-user-plus"></i> Amigos</a>
+        <a href="chat_ia.html" class="tutor"><i class="fas fa-robot"></i> Tutor IA</a>
+        <a href="perfil_estudiante.html"><i class="fas fa-user"></i> Mi Cuenta</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user"><div class="nav-avatar" id="navAvatar">E</div><span class="nav-name" id="navNombre">Estudiante</span></div>
+        <button class="nav-out" id="out" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+        <button class="nav-burger" onclick="document.getElementById('navLinks').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+    </div>
+</nav>
+
+<main class="main">
+    <!-- ============ HUB ============ -->
+    <section id="pHub">
+        <section class="hero">
+            <h1>Devioz Arcade 🎮</h1>
+            <p>Tu cuenta del sistema es tu cuenta de juego. Crea tu <strong style="color:var(--cy);">Gamer ID único</strong>, sube de división y demuestra quién manda en el ranking.</p>
+            <div class="hero-chips" id="heroChips"></div>
+        </section>
+
+        <div class="grid-cards">
+            <div class="card-x player-card" id="playerCard" style="grid-column:span 2;"></div>
+            <div class="card-x">
+                <h3 style="color:var(--cy);"><i class="fas fa-trophy"></i> Ranking en vivo</h3>
+                <div id="rankList" style="margin-top:8px;"></div>
+            </div>
+        </div>
+
+        <h2 class="section-title"><i class="fas fa-dice-d20"></i> Elige tu batalla</h2>
+        <div class="grid-cards">
+            <div class="card-x" style="grid-column:span 2;">
+                <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+                    <div class="cx-icon" style="width:64px;height:64px;font-size:2rem;">🐉</div>
+                    <div style="flex:1;min-width:250px;">
+                        <h3>Duelo del Dragón</h3>
+                        <ul class="como-jugar">
+                            <li>✅ Aciertas → lanzas un hechizo y bajas la vida del dragón.</li>
+                            <li>❌ Fallas → el dragón te ataca (salvo que tengas 🛡️ escudo).</li>
+                            <li>🔥 3 aciertos seguidos = golpe CRÍTICO y escudo cada 3.</li>
+                            <li>😡 A mitad de vida el dragón ENTRA EN FURIA y pega más fuerte.</li>
+                            <li>⏱ Tienes 20 segundos por pregunta: si no, pierdes el turno.</li>
+                        </ul>
+                    </div>
+                    <div style="min-width:230px;flex:1;">
+                        <div class="f"><label>Curso de las preguntas</label><select id="selCurso"><option value="">Mixto (banco general)</option></select></div>
+                        <div class="f"><label>Dificultad</label><select id="selDif"><option value="">Mixta</option><option value="facil">Fácil</option><option value="medio">Medio</option><option value="dificil">Difícil</option></select></div>
+                        <button class="btn" id="btnJugar" style="width:100%;"><i class="fas fa-play"></i> ¡Combatir!</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-x">
+                <div class="cx-icon">👥</div>
+                <h3>Mi comunidad</h3>
+                <p>Busca jugadores por su Gamer ID, envíales solicitud y arma tu lista de hasta 25 amigos para futuras batallas.</p>
+                <a class="btn sm" href="amigos_arcade.html"><i class="fas fa-user-plus"></i> Gestionar amigos</a>
+            </div>
+        </div>
+        <p class="empty" style="margin-top:16px;padding:18px;font-size:.88rem;"><i class="fas fa-hammer"></i> En construcción: ⚔️ Duelo 1v1 en vivo contra amigos y 🏟️ Liga de equipos con salas privadas.</p>
+    </section>
+
+    <!-- ============ JUEGO ============ -->
+    <section id="pJuego" style="display:none;">
+        <div class="card-x card-juego" id="cardJuego" style="position:relative;overflow:hidden;">
+            <div id="hud"></div>
+            <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+            <h3 id="qTexto" style="color:var(--ink);font-size:1.12rem;margin:10px 0 4px;line-height:1.5;"></h3>
+            <div class="opciones" id="opciones"></div>
+            <div id="feedback"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+                <small style="color:var(--mu);" id="qProgreso"></small>
+                <button class="btn sm coral" id="btnSalir"><i class="fas fa-flag"></i> Rendirme</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FIN ============ -->
+    <section id="pFin" style="display:none;">
+        <div class="card-x" style="text-align:center;padding:40px 26px;">
+            <div style="font-size:3.4rem;" id="finEmoji">🏆</div>
+            <div class="stars" id="finStars">★★★</div>
+            <h2 id="finTitulo" style="color:var(--cy);font-family:'Orbitron';margin:6px 0;"></h2>
+            <p id="finDetalle" style="color:var(--mu);margin-bottom:18px;line-height:1.8;"></p>
+            <div id="finFallos" style="margin-bottom:20px;text-align:left;"></div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <button class="btn" id="btnOtra"><i class="fas fa-redo"></i> Otra batalla</button>
+                <button class="btn ghost" id="btnHub"><i class="fas fa-home"></i> Volver al hub</button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">Devioz Academy © 2025</footer>
+</main>
+
+<!-- ============ MODAL GAMER ID (solo se abre al pulsar el botón) ============ -->
+<div class="modal" id="modalID">
+    <div class="mbox" style="max-width:540px;">
+        <button class="modal-close" onclick="cerrarModalID()" title="Cerrar"><i class="fas fa-times"></i></button>
+        <h3>🎮 Crea tu Gamer ID</h3>
+        <p style="color:var(--mu);font-size:.9rem;margin-bottom:14px;">Es tu identidad en el Arcade: <strong style="color:var(--cy);">única e irrepetible</strong>. Tu cuenta del sistema ya está vinculada automáticamente.</p>
+        <div class="preview-box">
+            <div class="preview-ava" id="prevAva">🧙</div>
+            <div>
+                <div id="prevID" style="font-family:'Orbitron';color:#fff;font-size:1.05rem;">Tu Gamer ID...</div>
+                <span class="rank-badge rank-bronze" style="margin-top:6px;">🥉 Bronce IV · al empezar</span>
+            </div>
+        </div>
+        <div class="f"><label><i class="fas fa-id-badge"></i> Gamer ID (3-16: letras, números, _)</label><input id="inpID" maxlength="16" placeholder="Ej: DragonKiller_07" autocomplete="off"><div id="idStatus"></div></div>
+        <div class="f"><label><i class="fas fa-masks-theater"></i> Avatar</label><div class="ava-grid" id="avaGrid"></div></div>
+        <div class="f"><label><i class="fas fa-palette"></i> Color de aura</label><div class="col-grid" id="colGrid"></div></div>
+        <div class="modal-actions">
+            <button class="btn ghost" onclick="cerrarModalID()"><i class="fas fa-times"></i> Cancelar</button>
+            <button class="btn" id="btnCrear"><i class="fas fa-check"></i> Entrar al Arcade</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE = '/lms_prepa/backend/controllers/';
+const AVATARES = ['🧙','','⚡','','👾','','','❄️','','🔥','','🦅'];
+const COLORES  = {cian:'#22d9ff',magenta:'#e879f9',verde:'#34d399',ambar:'#facc15',rojo:'#fb7185',violeta:'#a855f7'};
+const TIEMPO_Q = 20;
+let perfil = null, selAva = '🧙', selCol = 'cian', bloqueado = false, t0 = 0, timerInt = null;
+
+/* ========== SONIDOS ========== */
+let audioCtx = null;
+function sonido(t){
+    try{
+        audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        const play=(f0,f1,dur,type='sine',vol=.14)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type=type;o.frequency.setValueAtTime(f0,now);o.frequency.exponentialRampToValueAtTime(f1,now+dur);g.gain.setValueAtTime(vol,now);g.gain.exponentialRampToValueAtTime(.001,now+dur+.02);o.start(now);o.stop(now+dur+.03);};
+        if(t==='ok') play(660,990,.14);
+        else if(t==='mal') play(200,90,.25,'sawtooth');
+        else if(t==='hit') play(130,40,.3,'square',.18);
+        else if(t==='win'){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>play(f,f,.25,'sine',.12), i*120)); }
+    }catch(e){}
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('out').onclick = () => { if(confirm('¿Cerrar sesión?')){ localStorage.clear(); sessionStorage.clear(); location.href='index.html'; } };
+    document.getElementById('btnJugar').onclick = iniciarBatalla;
+    document.getElementById('btnSalir').onclick = abandonar;
+    document.getElementById('btnOtra').onclick = iniciarBatalla;
+    document.getElementById('btnHub').onclick = () => { mostrar('pHub'); cargarHub(); };
+    document.getElementById('btnCrear').onclick = crearPerfil;
+    document.getElementById('inpID').addEventListener('input', () => { chequearID(); actualizarPreview(); });
+    pintarPickers();
+    await cargarSesion();
+    await cargarHub();
+});
+
+function mostrar(p){ ['pHub','pJuego','pFin'].forEach(x=>document.getElementById(x).style.display='none'); document.getElementById(p).style.display=''; }
+async function cargarSesion(){
+    try{
+        const d = await (await fetch(BASE+'UsuarioController.php?accion=mi_perfil')).json();
+        if(d.ok && d.data){
+            document.getElementById('navNombre').textContent = d.data.nombre;
+            document.getElementById('navAvatar').innerHTML = d.data.foto ? `<img src="${d.data.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : d.data.nombre.charAt(0).toUpperCase();
+        }
+    }catch(e){}
+}
+
+/* ========== HUB ========== */
+async function cargarHub(){
+    mostrar('pHub');
+    const [p, cursos, rank] = await Promise.all([
+        (await fetch(BASE+'ArcadeController.php?accion=mi_perfil')).json(),
+        (await fetch(BASE+'CursoController.php?accion=listar')).json().catch(()=>({ok:false})),
+        (await fetch(BASE+'ArcadeController.php?accion=ranking')).json()
+    ]);
+    if(!p.ok){ alert('⚠️ '+(p.msg||'Error de perfil')); return; }
+    const sel = document.getElementById('selCurso');
+    sel.innerHTML = '<option value="">Mixto (banco general)</option>' + ((cursos.ok?cursos.data:[])||[]).map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+    const rl = (rank.ok?rank.data:[])||[];
+    document.getElementById('rankList').innerHTML = rl.length ? rl.map((x,i)=>`
+        <div class="rank-row"><span class="rank-pos">${i+1}</span><span style="flex:1;">${x.avatar} <b>${x.gamer_id}</b></span>
+        <span class="rank-badge ${x.rank.css}">${x.rank.ico} ${x.rank.liga} ${x.rank.division}</span>
+        <b style="color:var(--cy);font-family:'Orbitron';">${x.pts_ranked}</b></div>`).join('')
+        : '<p style="color:var(--mu);text-align:center;padding:14px;">Sé el primero del ranking 🏆</p>';
+
+    if(!p.existe){
+        perfil = null;
+        document.getElementById('heroChips').innerHTML =
+            `<span class="uni-chip" style="border-color:rgba(250,204,21,.5);color:var(--wa);"><i class="fas fa-id-badge"></i> Sin Gamer ID todavía</span>
+             <a class="hero-chip" href="amigos_arcade.html"><i class="fas fa-user-plus"></i> Mis Amigos</a>`;
+        document.getElementById('playerCard').innerHTML = `
+            <div class="player-ava" style="opacity:.5;">❓</div>
+            <div style="flex:1;min-width:220px;">
+                <div class="player-id">Crea tu identidad de jugador</div>
+                <p style="color:var(--mu);font-size:.9rem;margin:6px 0 12px;">Sin Gamer ID no puedes batallar ni aparecer en el ranking.</p>
+                <button class="btn sm" onclick="abrirModalID()"><i class="fas fa-id-badge"></i> Crear mi Gamer ID</button>
+            </div>`;
+        return;
+    }
+    perfil = p.data;
+    const r = perfil.rank, n = perfil.nivel;
+    document.getElementById('heroChips').innerHTML =
+        `<span class="uni-chip mia"><i class="fas fa-id-badge"></i> ${perfil.gamer_id}</span>
+         <span class="rank-badge ${r.css}">${r.ico} ${r.liga} ${r.division}</span>
+         <span class="hero-chip"><i class="fas fa-star"></i> Nivel ${n.nivel} · ${perfil.xp} XP</span>
+         <a class="hero-chip" href="amigos_arcade.html"><i class="fas fa-user-plus"></i> Mis Amigos</a>`;
+    document.getElementById('playerCard').innerHTML = `
+        <div class="player-ava" style="border-color:${COLORES[perfil.color]||'#22d9ff'}">${perfil.avatar}</div>
+        <div style="flex:1;min-width:220px;">
+            <div class="player-id">${perfil.gamer_id} <small style="color:var(--mu);font-size:.75rem;">· ${perfil.titulo}</small></div>
+            <div style="color:var(--mu);font-size:.85rem;margin:4px 0;">
+                ${r.es_max ? '👑 RANGO MÁXIMO' : `⬆️ ${r.pts_faltantes} pts para tu siguiente división`} · 🏆 ${perfil.stats.victorias}V - ${perfil.stats.derrotas}D
+            </div>
+            <div class="xp-bar"><div class="xp-fill" style="width:${n.xp_en_nivel}%"></div></div>
+            <small style="color:var(--mu);">XP del nivel: ${n.xp_en_nivel}/100</small>
+        </div>`;
+}
+
+/* ========== MODAL ========== */
+function abrirModalID(){ document.getElementById('modalID').classList.add('open'); actualizarPreview(); }
+function cerrarModalID(){ document.getElementById('modalID').classList.remove('open'); }
+function pintarPickers(){
+    document.getElementById('avaGrid').innerHTML = AVATARES.map(a=>`<button type="button" class="ava-opt ${a===selAva?'sel':''}" onclick="pickAva('${a}',this)">${a}</button>`).join('');
+    document.getElementById('colGrid').innerHTML = Object.entries(COLORES).map(([k,v])=>`<button type="button" class="col-opt ${k===selCol?'sel':''}" title="${k}" style="background:${v};color:${v};" onclick="pickCol('${k}',this)"></button>`).join('');
+}
+function pickAva(a,el){ selAva=a; document.querySelectorAll('.ava-opt').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); actualizarPreview(); }
+function pickCol(c,el){ selCol=c; document.querySelectorAll('.col-opt').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); actualizarPreview(); }
+function actualizarPreview(){
+    const v = document.getElementById('inpID').value.trim();
+    document.getElementById('prevAva').textContent = selAva;
+    document.getElementById('prevAva').style.borderColor = COLORES[selCol];
+    document.getElementById('prevAva').style.boxShadow = `0 0 20px ${COLORES[selCol]}66`;
+    document.getElementById('prevID').textContent = v || 'Tu Gamer ID...';
+}
+let checkTimer=null;
+function chequearID(){
+    const v = document.getElementById('inpID').value.trim();
+    const st = document.getElementById('idStatus');
+    clearTimeout(checkTimer);
+    if(v.length < 3){ st.textContent=''; return; }
+    st.innerHTML = '<span style="color:var(--mu);">⏳ comprobando...</span>';
+    checkTimer = setTimeout(async ()=>{
+        const d = await (await fetch(BASE+'ArcadeController.php?accion=check_id&gamer_id='+encodeURIComponent(v))).json();
+        st.innerHTML = d.disponible ? '<span style="color:var(--ok);">✅ Disponible</span>' : `<span style="color:var(--er);">❌ ${d.motivo || 'Ya existe, elige otro'}</span>`;
+    }, 350);
+}
+async function crearPerfil(){
+    const fd = new FormData();
+    fd.append('gamer_id', document.getElementById('inpID').value.trim());
+    fd.append('avatar', selAva); fd.append('color', selCol);
+    const d = await (await fetch(BASE+'ArcadeController.php?accion=crear_perfil',{method:'POST',body:fd})).json();
+    if(d.ok){ cerrarModalID(); sonido('win'); cargarHub(); } else alert('⚠️ '+d.msg);
+}
+
+/* ========== EFECTOS VISUALES ========== */
+function lanzarProyectil(fromId, toId, emoji, color, cb){
+    const card = document.getElementById('cardJuego');
+    const f = document.getElementById(fromId), t = document.getElementById(toId);
+    if(!f || !t){ cb && cb(); return; }
+    const cr = card.getBoundingClientRect(), fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect();
+    const s = document.createElement('div');
+    s.className = 'spell'; s.textContent = emoji; s.style.color = color;
+    s.style.left = (fr.left - cr.left + fr.width/2 - 16) + 'px';
+    s.style.top  = (fr.top  - cr.top  + fr.height/2 - 16) + 'px';
+    card.appendChild(s);
+    const dx = tr.left - fr.left, dy = tr.top - fr.top;
+    const anim = s.animate([
+        {transform:'translate(0,0) scale(.6)', opacity:1},
+        {transform:`translate(${dx*0.5}px,${dy*0.5 - 46}px) scale(1.15)`, opacity:1, offset:.5},
+        {transform:`translate(${dx}px,${dy}px) scale(1.5)`, opacity:.9}
+    ], {duration:480, easing:'cubic-bezier(.3,.7,.4,1)'});
+    anim.onfinish = () => { s.remove(); cb && cb(); };
+}
+function particulas(enId, color, n=16){
+    const card = document.getElementById('cardJuego'), el = document.getElementById(enId);
+    if(!el) return;
+    const cr = card.getBoundingClientRect(), er = el.getBoundingClientRect();
+    for(let i=0;i<n;i++){
+        const p = document.createElement('div'); p.className='part'; p.style.background=color;
+        p.style.left = (er.left-cr.left+er.width/2)+'px'; p.style.top = (er.top-cr.top+er.height/2)+'px';
+        const ang = Math.random()*Math.PI*2, d = 30+Math.random()*65;
+        p.style.setProperty('--px', Math.cos(ang)*d+'px'); p.style.setProperty('--py', Math.sin(ang)*d+'px');
+        card.appendChild(p); setTimeout(()=>p.remove(), 850);
+    }
+}
+function flash(color){
+    const f = document.getElementById('flashOverlay');
+    f.style.background = color; f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+}
+function floatDmg(sprId, txt, color){
+    const el = document.getElementById(sprId); if(!el) return;
+    const s = document.createElement('span'); s.className='dmg-float'; s.style.color=color; s.textContent=txt;
+    el.appendChild(s); setTimeout(()=>s.remove(), 900);
+}
+function hitAnim(id){ const el=document.getElementById(id); if(!el) return; el.classList.add('hit'); setTimeout(()=>el.classList.remove('hit'), 460); }
+function sacudir(){ const c=document.getElementById('cardJuego'); c.classList.add('shake'); setTimeout(()=>c.classList.remove('shake'),380); }
+
+/* ========== HUD ========== */
+function pintarHUD(h){
+    document.getElementById('hud').innerHTML = `
+    <div class="vs-row">
+        <span class="sprite" id="spJ">🧙${h.escudo?'<span class="shield-orbit">🛡️</span>':''}</span>
+        <span style="color:var(--mg);font-family:'Orbitron';font-size:1.2rem;">VS</span>
+        <span class="sprite" id="spD">${h.furia?'🔥':''}</span>
+    </div>
+    <div class="hp-label"><span>Tú</span><span id="lblJ">${h.hpJ} HP</span></div>
+    <div class="hp-bar"><div class="hp-ghost" id="hpGhostJ" style="width:${h.hpJ}%"></div><div class="hp-fill jugador" id="hpFillJ" style="width:${h.hpJ}%"></div></div>
+    <div class="hp-label"><span>${h.furia?'DRAGÓN EN FURIA':'Dragón'}</span><span id="lblD">${h.hpD} HP</span></div>
+    <div class="hp-bar"><div class="hp-ghost" id="hpGhostD" style="width:${h.hpD}%"></div><div class="hp-fill dragon" id="hpFillD" style="width:${h.hpD}%"></div></div>
+    <small style="color:var(--mu);" id="hudExtra">🔥 Racha: ${h.racha} ${h.racha>=3?'· ¡CRÍTICOS!':''} · ⭐ ${h.puntos} pts</small>`;
+}
+function updateHUD(h){
+    const fj=document.getElementById('hpFillJ'), gj=document.getElementById('hpGhostJ');
+    const fd=document.getElementById('hpFillD'), gd=document.getElementById('hpGhostD');
+    if(fj){ fj.style.width=h.hpJ+'%'; setTimeout(()=>gj.style.width=h.hpJ+'%', 60); }
+    if(fd){ fd.style.width=h.hpD+'%'; setTimeout(()=>gd.style.width=h.hpD+'%', 60); }
+    const lj=document.getElementById('lblJ'), ld=document.getElementById('lblD');
+    if(lj) lj.textContent=h.hpJ+' HP'; if(ld) ld.textContent=h.hpD+' HP';
+    const ex=document.getElementById('hudExtra');
+    if(ex) ex.innerHTML=`🔥 Racha: ${h.racha} ${h.racha>=3?'· ¡CRÍTICOS!':''} ${h.escudo?'· 🛡️ escudo':''} · ⭐ ${h.puntos} pts`;
+    const spJ=document.getElementById('spJ'), spD=document.getElementById('spD');
+    if(spJ) spJ.innerHTML = '🧙' + (h.escudo?'<span class="shield-orbit">🛡️</span>':'');
+    if(spD) spD.textContent = h.furia ? '🔥' : '🐉';
+}
+
+/* ========== TIMER ========== */
+function iniciarTimer(){
+    clearInterval(timerInt);
+    let rest = TIEMPO_Q;
+    const f = document.getElementById('timerFill');
+    f.style.width = '100%';
+    timerInt = setInterval(()=>{
+        rest -= 0.1;
+        f.style.width = Math.max(0, rest/TIEMPO_Q*100) + '%';
+        if(rest <= 0){ clearInterval(timerInt); if(!bloqueado) responder('—', null); }
+    }, 100);
+}
+
+/* ========== BATALLA ========== */
+async function iniciarBatalla(){
+    if(!perfil){ alert('Primero crea tu Gamer ID 🎮'); abrirModalID(); return; }
+    const curso = document.getElementById('selCurso').value || '';
+    const dif = document.getElementById('selDif').value || '';
+    const d = await (await fetch(BASE+`PartidaController.php?accion=iniciar&curso_id=${curso}&dificultad=${dif}&limite=10`,{method:'POST'})).json();
+    if(!d.ok){
+        if(d.codigo === 'POOL_INSUFICIENTE' && curso){
+            if(confirm('🤖 No hay preguntas de ese curso aún. ¿Generarlas con el bot ahora?')){
+                const fd = new FormData(); fd.append('curso_id', curso); fd.append('dificultad', dif||'medio'); fd.append('cantidad', 8);
+                const g = await (await fetch(BASE+'PreguntaController.php?accion=generar_curso',{method:'POST',body:fd})).json();
+                alert(g.ok ? g.msg : '⚠️ '+g.msg);
+                if(g.ok) iniciarBatalla();
+            }
+        } else alert('⚠️ '+d.msg);
+        return;
+    }
+    mostrar('pJuego');
+    pintarHUD(d.hud);
+    pintarTurno(d);
+}
+function pintarTurno(d){
+    bloqueado = false; t0 = Date.now();
+    updateHUD(d.hud);
+    document.getElementById('qTexto').textContent = d.pregunta.pregunta;
+    document.getElementById('qProgreso').textContent = `Pregunta ${d.hud.idx+1} de ${d.hud.total} · ${d.pregunta.dificultad}`;
+    const fb = document.getElementById('feedback'); fb.className=''; fb.style.display='none';
+    document.getElementById('opciones').innerHTML = d.pregunta.opciones.map(o=>
+        `<button class="opcion" data-l="${o[0]}" onclick="responder('${o[0]}',this)"><span class="letra">${o[0]}</span> ${o[1]}</button>`).join('');
+    iniciarTimer();
+}
+
+async function responder(letra, btn){
+    if(bloqueado) return; bloqueado = true;
+    clearInterval(timerInt);
+    const fd = new FormData();
+    fd.append('letra', letra);
+    fd.append('elapsed', ((Date.now()-t0)/1000).toFixed(1));
+    const d = await (await fetch(BASE+'PartidaController.php?accion=responder',{method:'POST',body:fd})).json();
+    if(!d.ok){ alert('⚠️ '+d.msg); bloqueado=false; return; }
+
+    document.querySelectorAll('#opciones .opcion').forEach(b=>{ b.disabled=true; if(b.dataset.l===d.correcta_letra) b.classList.add('ok'); });
+    if(!d.es_correcta && btn) btn.classList.add('mal');
+    const ev = d.eventos;
+
+    const impacto = () => {
+        if(d.es_correcta){
+            sonido(ev.crit?'hit':'ok');
+            particulas('spD', ev.crit?'#facc15':'#fb7185', ev.crit?26:16);
+            floatDmg('spD', '-'+ev.dmg, ev.crit?'#facc15':'#fb7185');
+            hitAnim('spD');
+        } else if(ev.dmg_rec > 0){
+            sonido('mal'); particulas('spJ','#fb7185',18);
+            floatDmg('spJ', '-'+ev.dmg_rec, '#34d399');
+            hitAnim('spJ'); sacudir(); flash('rgba(251,113,133,.35)');
+        } else sonido('mal');
+        if(ev.furia_activada){ flash('rgba(251,113,133,.55)'); sonido('hit'); }
+        updateHUD(d.hud);
+        const fb = document.getElementById('feedback');
+        fb.className = d.es_correcta ? 'ok' : 'mal';
+        fb.style.display = 'block';
+        fb.innerHTML = d.es_correcta
+            ? `⚡ ¡Hechizo lanzado! -${ev.dmg} al dragón${ev.crit?' 💥 CRÍTICO':''}${ev.escudo_ganado?' · 🛡️ escudo ganado':''}${ev.furia_activada?' · 🔥 ¡EL DRAGÓN ENTRA EN FURIA!':''}`
+            : `❌ Era la <b>${d.correcta_letra}</b>.${ev.dmg_rec?` El dragón te quema -${ev.dmg_rec}.`:' Tu 🛡️ escudo bloqueó el ataque.'}${ev.furia_activada?' 🔥 ¡EL DRAGÓN ENTRA EN FURIA!':''}<span class="expl">📖 ${d.explicacion||''}</span>`;
+        setTimeout(()=>{ d.fin ? pintarFin(d.fin) : pintarTurno(d); }, d.es_correcta ? 1300 : 2600);
+    };
+
+    if(d.es_correcta) lanzarProyectil('spJ','spD', ev.crit?'💥':'✨', ev.crit?'#facc15':'#22d9ff', impacto);
+    else if(ev.dmg_rec > 0) lanzarProyectil('spD','spJ','🔥','#fb7185', impacto);
+    else impacto();
+}
+
+function pintarFin(f){
+    clearInterval(timerInt);
+    mostrar('pFin');
+    const win = f.resultado === 'victoria';
+    if(win) sonido('win');
+    let stars = 0;
+    if(win) stars = f.errores === 0 ? 3 : (f.errores <= 2 ? 2 : 1);
+    else stars = f.aciertos > f.errores ? 1 : 0;
+    document.getElementById('finStars').innerHTML = [1,2,3].map(i=>`<span class="${i<=stars?'':'star-off'}">★</span>`).join('');
+    document.getElementById('finEmoji').textContent = win?'🏆':'';
+    document.getElementById('finTitulo').textContent = win?'¡Dragón derrotado!':'El dragón te venció...';
+    document.getElementById('finDetalle').innerHTML =
+        `Aciertos: <b>${f.aciertos}</b> · Errores: <b>${f.errores}</b> · Racha máx: <b>${f.max_racha}</b><br>Puntos: <b>${f.puntos}</b> · XP ganada: <b>+${f.xp}</b>`;
+    document.getElementById('finFallos').innerHTML = f.fallos.length
+        ? `<h3 style="color:var(--er);font-size:1rem;margin-bottom:10px;"><i class="fas fa-graduation-cap"></i> Repasa tus errores:</h3>` +
+          f.fallos.slice(0,6).map(x=>`<div class="fallo-item"><b>P:</b> ${x.q}<br><b>Tu respuesta:</b> ${x.dada} · <span class="ok-txt">Correcta: ${x.correcta}</span>${x.exp?`<br><small style="color:var(--mu);">📖 ${x.exp}</small>`:''}</div>`).join('')
+        : '<p style="color:var(--ok);font-weight:700;"><i class="fas fa-medal"></i> ¡Partida perfecta!</p>';
+}
+async function abandonar(){
+    if(!confirm('¿Rendirte en esta batalla?')) return;
+    clearInterval(timerInt);
+    await fetch(BASE+'PartidaController.php?accion=abandonar',{method:'POST'});
+    mostrar('pHub'); cargarHub();
+}
+</script>
+</body>
+</html>
